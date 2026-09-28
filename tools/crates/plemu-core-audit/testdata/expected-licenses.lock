@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "note": "All commit and licenseSha256 values are TBD — these must be filled in by a human reviewer as part of the initial pin PR. The nightly plemu-core-audit --strict fails on any TBD value by design; unpinned cores do not go to production.",
+  "cores": [
+    {
+      "coreId": "fceumm",
+      "repo": "https://github.com/libretro/libretro-fceumm",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "coreId": "bsnes",
+      "repo": "https://github.com/libretro/bsnes-libretro",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "coreId": "blastem",
+      "repo": "https://github.com/libretro/blastem",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "coreId": "gearsystem",
+      "repo": "https://github.com/drhelius/Gearsystem",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "coreId": "sameboy",
+      "repo": "https://github.com/LIJI32/SameBoy",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "MIT"
+    },
+    {
+      "coreId": "mgba",
+      "repo": "https://github.com/mgba-emu/mgba",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "MPL-2.0"
+    },
+    {
+      "coreId": "stella",
+      "repo": "https://github.com/stella-emu/stella",
+      "commit": "TBD",
+      "licenseFile": "License.txt",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "coreId": "mupen64plus_next",
+      "repo": "https://github.com/libretro/mupen64plus-libretro-nx",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "coreId": "beetle_psx",
+      "repo": "https://github.com/libretro/beetle-psx-libretro",
+      "commit": "TBD",
+      "licenseFile": "COPYING",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "coreId": "melonds",
+      "repo": "https://github.com/melonDS-emu/melonDS",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-3.0-only"
+    },
+    {
+      "coreId": "ppsspp",
+      "repo": "https://github.com/hrydgard/ppsspp",
+      "commit": "TBD",
+      "licenseFile": "LICENSE.TXT",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-2.0-or-later"
+    },
+    {
+      "coreId": "flycast",
+      "repo": "https://github.com/flyinghead/flycast",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "GPL-2.0-only"
+    },
+    {
+      "coreId": "tic80",
+      "repo": "https://github.com/nesbox/TIC-80",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "MIT"
+    },
+    {
+      "coreId": "fake08",
+      "repo": "https://github.com/jtothebell/fake-08",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "MIT"
+    },
+    {
+      "coreId": "wasm4",
+      "repo": "https://github.com/aduros/wasm4",
+      "commit": "TBD",
+      "licenseFile": "LICENSE",
+      "licenseSha256": "TBD",
+      "spdx": "ISC"
+    },
+    {
+      "coreId": "microw8",
+      "repo": "TBD-verify",
+      "commit": "TBD",
+      "licenseFile": "TBD-verify",
+      "licenseSha256": "TBD",
+      "spdx": "TBD-verify"
+    }
+  ]
+}

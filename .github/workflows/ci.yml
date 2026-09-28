@@ -1,0 +1,95 @@
+name: CI
+
+# Build + test gate (complements pr-checks.yml, which does content screening).
+# Runs the Rust workspace, the native shim smoke harness, and — when a Unity
+# license secret is configured — the Unity EditMode suite.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust (fmt · clippy · test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools
+      - name: fmt
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: test
+        run: cargo test --workspace
+
+  native-smoke:
+    name: Native shim smoke (stub core)
+    # macOS runner: build_editor.sh uses Apple clang / -dynamiclib. The shim is
+    # portable C11; a Linux path (.so / -shared) is a future nicety.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build + run rh_smoke
+        run: bash apps/device/native/build_editor.sh
+
+  e2e:
+    name: End-to-end enforcement proof (offline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools
+      # The e2e signs a manifest with a dev key when present; without
+      # PLEMU_DEV_KEY_PEM it skips signing and still asserts screen + build
+      # (CI-safe by design — dev keys never live in the repo).
+      - name: e2e-demo
+        working-directory: tools
+        run: bash scripts/e2e-demo.sh
+
+  unity-editmode:
+    name: Unity EditMode (needs UNITY_LICENSE secret)
+    runs-on: ubuntu-latest
+    # Skips cleanly until a Unity license is configured (see docs below).
+    if: ${{ github.repository == 'plemu-labs/plemu' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard — Unity license configured?
+        id: guard
+        run: |
+          if [ -z "${{ secrets.UNITY_LICENSE }}" ]; then
+            echo "::warning::UNITY_LICENSE secret not set — skipping Unity EditMode."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/cache@v4
+        if: steps.guard.outputs.run == 'true'
+        with:
+          path: apps/device/unity/Library
+          key: unity-library-${{ hashFiles('apps/device/unity/Packages/packages-lock.json') }}
+      - uses: game-ci/unity-test-runner@v4
+        if: steps.guard.outputs.run == 'true'
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: apps/device/unity
+          testMode: EditMode
+          unityVersion: 6000.3.19f1
+      # PlayMode is not run in CI: it needs the native shim + core .so staged and
+      # a working audio/graphics device. Run it locally after staging, or on the
+      # PSG1 DevKit. See docs/ci-and-testing.md.

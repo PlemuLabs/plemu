@@ -1,0 +1,43 @@
+[package]
+name = "plemu-screen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Content screening tool: digest verification, attestation checks, archive safety."
+
+[[bin]]
+name = "plemu-screen"
+path = "src/main.rs"
+
+[lib]
+name = "plemu_screen"
+path = "src/lib.rs"
+
+[dependencies]
+plemu-schemas = { workspace = true }
+plemu-dat = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+base64 = { workspace = true }
+ed25519-dalek = { workspace = true }
+clap = { workspace = true }
+sha2 = { workspace = true }
+bs58 = { workspace = true }
+zip = { workspace = true }
+rusqlite = { workspace = true }
+crc32fast = { workspace = true }
+md-5 = { workspace = true }
+sha1 = { workspace = true }
+strsim = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+assert_cmd = { workspace = true }
+plemu-schemas = { workspace = true }
+bs58 = { workspace = true }
+rusqlite = { workspace = true }

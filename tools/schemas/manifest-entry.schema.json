@@ -1,0 +1,266 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Entry",
+  "description": "A single approved content entry. SPEC §1.3.",
+  "type": "object",
+  "required": [
+    "addedAt",
+    "artwork",
+    "attestation",
+    "coreId",
+    "creator",
+    "downloadUrls",
+    "id",
+    "license",
+    "minCoreVersion",
+    "sha256",
+    "sizeBytes",
+    "system",
+    "title"
+  ],
+  "properties": {
+    "addedAt": {
+      "type": "string"
+    },
+    "artwork": {
+      "$ref": "#/definitions/Artwork"
+    },
+    "attestation": {
+      "$ref": "#/definitions/Attestation"
+    },
+    "coreId": {
+      "$ref": "#/definitions/CoreId"
+    },
+    "creator": {
+      "$ref": "#/definitions/Creator"
+    },
+    "downloadUrls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "id": {
+      "description": "`\"<system>/<slug>\"`, slug `^[a-z0-9]+(-[a-z0-9]+)*$`, immutable.",
+      "type": "string"
+    },
+    "license": {
+      "$ref": "#/definitions/License"
+    },
+    "minCoreVersion": {
+      "type": "string"
+    },
+    "revoked": {
+      "description": "Optional, default false.",
+      "default": false,
+      "type": "boolean"
+    },
+    "revokedAt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "revokedReason": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RevokedReason"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sha256": {
+      "description": "64 lowercase hex chars — digest of the exact playable artifact.",
+      "type": "string"
+    },
+    "sizeBytes": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "system": {
+      "$ref": "#/definitions/System"
+    },
+    "tags": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "Artwork": {
+      "description": "Cosmetic artwork references. SPEC §1.3.",
+      "type": "object",
+      "properties": {
+        "iconUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "screenshotUrls": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Attestation": {
+      "description": "Creator/curator attestation. SPEC §1.3 / §3.",
+      "type": "object",
+      "required": [
+        "message",
+        "role",
+        "signature",
+        "signedAt"
+      ],
+      "properties": {
+        "message": {
+          "description": "Exact attestation text (see SPEC §3).",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/AttestationRole"
+        },
+        "signature": {
+          "description": "base64 ed25519 signature by creator/curator wallet.",
+          "type": "string"
+        },
+        "signedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "AttestationRole": {
+      "description": "Who signed the attestation. SPEC §1.3 / §3.",
+      "type": "string",
+      "enum": [
+        "creator",
+        "curator"
+      ]
+    },
+    "CoreId": {
+      "description": "Approved emulator core identifier. SPEC §1.5 — 16-entry deny-by-default allowlist.\n\nNote the exact spellings: `mupen64plus_next`, `beetle_psx`, `fake08` — these use underscores / no hyphen and require explicit serde renames.",
+      "type": "string",
+      "enum": [
+        "fceumm",
+        "bsnes",
+        "blastem",
+        "gearsystem",
+        "sameboy",
+        "mgba",
+        "stella",
+        "mupen64plus_next",
+        "beetle_psx",
+        "melonds",
+        "ppsspp",
+        "flycast",
+        "tic80",
+        "fake08",
+        "wasm4",
+        "microw8"
+      ]
+    },
+    "Creator": {
+      "description": "Creator identity. SPEC §1.3.",
+      "type": "object",
+      "required": [
+        "displayName",
+        "wallet"
+      ],
+      "properties": {
+        "displayName": {
+          "type": "string"
+        },
+        "playId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wallet": {
+          "description": "base58 wallet address.",
+          "type": "string"
+        }
+      }
+    },
+    "License": {
+      "description": "License block. SPEC §1.3.",
+      "type": "object",
+      "required": [
+        "evidenceUrl",
+        "type"
+      ],
+      "properties": {
+        "evidenceArchiveUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidenceUrl": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/LicenseType"
+        }
+      }
+    },
+    "LicenseType": {
+      "description": "License classification. SPEC §1.3.",
+      "type": "string",
+      "enum": [
+        "PD",
+        "CC0",
+        "CC-BY",
+        "CC-BY-SA",
+        "MIT",
+        "GPL",
+        "custom-attested"
+      ]
+    },
+    "RevokedReason": {
+      "description": "Reason an entry was revoked. SPEC §1.3.",
+      "type": "string",
+      "enum": [
+        "dmca",
+        "license-dispute",
+        "malware",
+        "creator-request"
+      ]
+    },
+    "System": {
+      "description": "Target system / platform. SPEC §1.4 — 18 variants.",
+      "type": "string",
+      "enum": [
+        "nes",
+        "snes",
+        "md",
+        "sms",
+        "gg",
+        "gb",
+        "gbc",
+        "gba",
+        "n64",
+        "ps1",
+        "nds",
+        "psp",
+        "dc",
+        "a26",
+        "tic80",
+        "pico8",
+        "wasm4",
+        "microw8"
+      ]
+    }
+  }
+}

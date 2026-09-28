@@ -1,0 +1,40 @@
+{
+  "id": "wasm4/hello-plemu",
+  "title": "Hello Plemu",
+  "system": "wasm4",
+  "coreId": "wasm4",
+  "minCoreVersion": "2.5.0",
+  "sha256": "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+  "sizeBytes": 8,
+  "creator": {
+    "wallet": "Dos7vSEN2rFFsinucJsaLyJ8B2EhkkcyrM6zu73rjcHa",
+    "displayName": "Plemu Dev"
+  },
+  "license": {
+    "type": "CC0",
+    "evidenceUrl": "https://github.com/plemu-labs/plemu/blob/main/registry/beta/wasm4/hello-plemu/license-evidence/evidence.md"
+  },
+  "attestation": {
+    "role": "creator",
+    "message": "Plemu Creator Attestation v1\n\nTitle: Hello Plemu\nSystem: wasm4\nSHA-256: 93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476\nLicense: CC0\nStatement: I created this work or have the right to distribute it under the stated license; it contains no third-party copyrighted material.\nWallet: Dos7vSEN2rFFsinucJsaLyJ8B2EhkkcyrM6zu73rjcHa\nTimestamp: 2026-07-12T00:00:00Z",
+    "signature": "XOONCTgHJNOgtNz778/kv85Y0iBI/LsaW8LGvmmQpeTJPAIumAqFonWqprVNSTNNZW4FLyZRdszZnmJYrw4DDA==",
+    "signedAt": "2026-07-12T00:00:00Z"
+  },
+  "artwork": {
+    "iconUrl": null,
+    "screenshotUrls": []
+  },
+  "tags": [
+    "starter-pack",
+    "wasm4"
+  ],
+  "artifact": {
+    "sha256": "93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476",
+    "sizeBytes": 8,
+    "filename": "artifact/hello-plemu.wasm"
+  },
+  "submission": {
+    "via": "cli",
+    "submittedAt": "2026-07-12T00:00:00Z"
+  }
+}

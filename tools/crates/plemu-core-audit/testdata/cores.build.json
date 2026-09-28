@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "note": "All 16 allowlisted cores (SPEC §1.5). commit fields are TBD — pin them as part of the first human-reviewed lock-in PR. See cores/expected-licenses.lock and docs/adding-a-core.md.",
+  "cores": [
+    {
+      "coreId": "fceumm",
+      "systems": ["nes"],
+      "repo": "https://github.com/libretro/libretro-fceumm",
+      "commit": "TBD",
+      "buildHint": "make -f Makefile.libretro platform=android-arm64",
+      "artifact": "fceumm_libretro_android.so"
+    },
+    {
+      "coreId": "bsnes",
+      "systems": ["snes"],
+      "repo": "https://github.com/libretro/bsnes-libretro",
+      "commit": "TBD",
+      "buildHint": "make platform=android-arm64",
+      "artifact": "bsnes_libretro_android.so"
+    },
+    {
+      "coreId": "blastem",
+      "systems": ["md"],
+      "repo": "https://github.com/libretro/blastem",
+      "commit": "TBD",
+      "buildHint": "TBD-verify",
+      "artifact": "blastem_libretro_android.so"
+    },
+    {
+      "coreId": "gearsystem",
+      "systems": ["sms", "gg"],
+      "repo": "https://github.com/drhelius/Gearsystem",
+      "commit": "TBD",
+      "buildHint": "cmake -DLIBRETRO=ON -DANDROID_ABI=arm64-v8a",
+      "artifact": "gearsystem_libretro_android.so"
+    },
+    {
+      "coreId": "sameboy",
+      "systems": ["gb", "gbc"],
+      "repo": "https://github.com/LIJI32/SameBoy",
+      "commit": "TBD",
+      "buildHint": "make libretro PLATFORM=android ARCH=arm64",
+      "artifact": "sameboy_libretro_android.so"
+    },
+    {
+      "coreId": "mgba",
+      "systems": ["gba"],
+      "repo": "https://github.com/mgba-emu/mgba",
+      "commit": "TBD",
+      "buildHint": "cmake -DLIBRETRO=ON -DANDROID_ABI=arm64-v8a",
+      "artifact": "mgba_libretro_android.so"
+    },
+    {
+      "coreId": "stella",
+      "systems": ["a26"],
+      "repo": "https://github.com/stella-emu/stella",
+      "commit": "TBD",
+      "buildHint": "TBD-verify",
+      "artifact": "stella_libretro_android.so"
+    },
+    {
+      "coreId": "mupen64plus_next",
+      "systems": ["n64"],
+      "repo": "https://github.com/libretro/mupen64plus-libretro-nx",
+      "commit": "TBD",
+      "buildHint": "make platform=android-arm64",
+      "artifact": "mupen64plus_next_libretro_android.so"
+    },
+    {
+      "coreId": "beetle_psx",
+      "systems": ["ps1"],
+      "repo": "https://github.com/libretro/beetle-psx-libretro",
+      "commit": "TBD",
+      "buildHint": "make platform=android-arm64",
+      "artifact": "beetle_psx_libretro_android.so"
+    },
+    {
+      "coreId": "melonds",
+      "systems": ["nds"],
+      "repo": "https://github.com/melonDS-emu/melonDS",
+      "commit": "TBD",
+      "buildHint": "cmake -DLIBRETRO=ON -DANDROID_ABI=arm64-v8a",
+      "artifact": "melonds_libretro_android.so"
+    },
+    {
+      "coreId": "ppsspp",
+      "systems": ["psp"],
+      "repo": "https://github.com/hrydgard/ppsspp",
+      "commit": "TBD",
+      "buildHint": "ndk-build APP_ABI=arm64-v8a NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=android/jni/Android.mk",
+      "artifact": "ppsspp_libretro_android.so"
+    },
+    {
+      "coreId": "flycast",
+      "systems": ["dc"],
+      "repo": "https://github.com/flyinghead/flycast",
+      "commit": "TBD",
+      "buildHint": "cmake -DLIBRETRO=ON -DANDROID_ABI=arm64-v8a",
+      "artifact": "flycast_libretro_android.so"
+    },
+    {
+      "coreId": "tic80",
+      "systems": ["tic80"],
+      "repo": "https://github.com/nesbox/TIC-80",
+      "commit": "TBD",
+      "buildHint": "cmake -DBUILD_LIBRETRO=ON -DANDROID_ABI=arm64-v8a",
+      "artifact": "tic80_libretro_android.so"
+    },
+    {
+      "coreId": "fake08",
+      "systems": ["pico8"],
+      "repo": "https://github.com/jtothebell/fake-08",
+      "commit": "TBD",
+      "buildHint": "make platform=android-arm64",
+      "artifact": "fake08_libretro_android.so"
+    },
+    {
+      "coreId": "wasm4",
+      "systems": ["wasm4"],
+      "repo": "https://github.com/aduros/wasm4",
+      "commit": "TBD",
+      "buildHint": "TBD-verify",
+      "artifact": "wasm4_libretro_android.so"
+    },
+    {
+      "coreId": "microw8",
+      "systems": ["microw8"],
+      "repo": "TBD-verify",
+      "commit": "TBD",
+      "buildHint": "TBD-verify",
+      "artifact": "microw8_libretro_android.so"
+    }
+  ]
+}

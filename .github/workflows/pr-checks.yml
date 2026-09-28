@@ -1,0 +1,191 @@
+name: PR Screening
+
+on:
+  pull_request:
+    paths:
+      # M2: two-tier registry — trigger on changes in either tier subdir.
+      - "registry/beta/**"
+      - "registry/main/**"
+
+# One run per PR at a time; cancel in-progress runs when new commits arrive.
+concurrency:
+  group: pr-screen-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plemu-screen:
+    name: Screen registry entries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed entry directories
+        id: changed-entries
+        run: |
+          # M2: find all registry/<tier>/<system>/<slug> directories touched by this PR.
+          # Paths now have 4 components: registry / beta|main / <system> / <slug>.
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.sha }}"
+          ENTRIES=$(git diff --name-only "$BASE" "$HEAD" \
+            | grep -E '^registry/(beta|main)/' \
+            | awk -F'/' '{print $1"/"$2"/"$3"/"$4}' \
+            | sort -u)
+          echo "entries<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$ENTRIES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "Found entry directories:"
+          echo "$ENTRIES"
+
+      # TODO(release): Replace this step with a pinned plemu-screen binary download once a
+      # release exists. Example (fill in after first release):
+      #
+      #   - name: Download plemu-screen binary
+      #     run: |
+      #       curl -fsSL https://github.com/plemu-labs/plemu/releases/download/v0.0.0/plemu-screen-linux-x86_64 \
+      #         -o /usr/local/bin/plemu-screen
+      #       chmod +x /usr/local/bin/plemu-screen
+      #       sha256sum --check <<'EOF'
+      #       <sha256> /usr/local/bin/plemu-screen
+      #       EOF
+      #
+      # Cargo fallback (for development — slow; requires Rust toolchain):
+      # cargo run -p plemu-screen --
+      - name: Install plemu-screen (TODO — no binary yet)
+        run: |
+          echo "::warning::plemu-screen binary not yet released. This step is a placeholder."
+          echo "TODO(release): pin plemu-screen binary URL and SHA-256 in this step."
+          # Stub: create a no-op binary so subsequent steps can reference it without hard-failing
+          # the workflow shape during development.
+          cat > /usr/local/bin/plemu-screen << 'STUB'
+          #!/usr/bin/env bash
+          echo '{"tool":"plemu-screen","version":"0.0.0-stub","verdict":"review"}' > "${@: -1}"
+          exit 10
+          STUB
+          chmod +x /usr/local/bin/plemu-screen
+
+      - name: Run screening for each entry
+        id: screen
+        run: |
+          OVERALL_EXIT=0
+          VERDICT_TABLE="| Entry | Verdict | Details |\n|---|---|---|"
+
+          while IFS= read -r ENTRY_DIR; do
+            [ -z "$ENTRY_DIR" ] && continue
+            REPORT_FILE="report-$(echo "$ENTRY_DIR" | tr '/' '-').json"
+            # M2: strip the registry/<tier>/ prefix to get the <system>/<slug> entry id.
+            ENTRY_ID=$(echo "$ENTRY_DIR" | sed 's|^registry/[^/]*/||')
+
+            echo "Screening: $ENTRY_DIR (id: $ENTRY_ID)"
+
+            plemu-screen \
+              --entry "$ENTRY_DIR" \
+              --denylist dats/latest/denylist.sqlite \
+              --keys keys/manifest-signers.json \
+              --out "$REPORT_FILE" || SCREEN_EXIT=$?
+            SCREEN_EXIT=${SCREEN_EXIT:-0}
+
+            # Parse verdict from report
+            VERDICT=$(python3 -c "import json,sys; d=json.load(open('$REPORT_FILE')); print(d.get('verdict','unknown'))" 2>/dev/null || echo "unknown")
+
+            VERDICT_TABLE="$VERDICT_TABLE\n| $ENTRY_ID | $VERDICT | [report](./$REPORT_FILE) |"
+
+            if [ "$SCREEN_EXIT" -eq 20 ]; then
+              OVERALL_EXIT=20
+            elif [ "$SCREEN_EXIT" -eq 10 ] && [ "$OVERALL_EXIT" -ne 20 ]; then
+              OVERALL_EXIT=10
+            fi
+          done <<< "${{ steps.changed-entries.outputs.entries }}"
+
+          echo "overall_exit=$OVERALL_EXIT" >> "$GITHUB_OUTPUT"
+          printf "verdict_table=%s" "$VERDICT_TABLE" >> "$GITHUB_OUTPUT"
+
+      - name: Apply labels based on screening result
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          OVERALL_EXIT="${{ steps.screen.outputs.overall_exit }}"
+
+          # Remove any existing screen labels before applying the new one.
+          for LABEL in screen:pass screen:review screen:reject; do
+            gh api \
+              --method DELETE \
+              "/repos/${{ github.repository }}/issues/${PR_NUMBER}/labels/${LABEL}" \
+              2>/dev/null || true
+          done
+
+          if [ "$OVERALL_EXIT" -eq 0 ]; then
+            gh issue edit "$PR_NUMBER" --add-label "screen:pass" --repo "${{ github.repository }}"
+          elif [ "$OVERALL_EXIT" -eq 10 ]; then
+            gh issue edit "$PR_NUMBER" --add-label "screen:review" --repo "${{ github.repository }}"
+          else
+            gh issue edit "$PR_NUMBER" --add-label "screen:reject" --repo "${{ github.repository }}"
+          fi
+
+      - name: Upsert sticky PR comment with verdict table
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const overallExit = parseInt('${{ steps.screen.outputs.overall_exit }}', 10);
+            const verdictTable = `${{ steps.screen.outputs.verdict_table }}`;
+            const emoji = overallExit === 0 ? '✅' : overallExit === 10 ? '⚠️' : '❌';
+            const label = overallExit === 0 ? 'PASS' : overallExit === 10 ? 'NEEDS REVIEW' : 'REJECTED';
+
+            // M2: screening is advisory/triage for beta (permissionless publish model).
+            // Only a DAT_MATCH hard-fail (exit 20) blocks merge — everything else informs.
+            const isBeta = true; // all PRs currently target registry/beta; update when main PRs land.
+            const body = [
+              `<!-- plemu-screen-verdict -->`,
+              `## ${emoji} plemu-screen: ${label}`,
+              ``,
+              `> **Note:** plemu-screen binary not yet released — this result is from the stub.`,
+              `> TODO(release): remove the note above once a real binary is pinned.`,
+              ``,
+              verdictTable.replace(/\\n/g, '\n'),
+              ``,
+              `**Exit codes:** 0 = pass · 10 = advisory (beta: does NOT block merge) · 20 = hard-fail (DAT_MATCH / piracy — blocks merge)`,
+              `**M2 policy:** \`registry/beta\` is permissionless — content is NOT pre-screened or reviewed before publish.`,
+              `plemu-screen is a triage/moderation aid (run on-demand for main-store curation and to flag obvious piracy for proactive takedown).`,
+              `A \`screen:review\` label informs curators; it does not block the beta publish.`,
+              `**Check ids (hard-fail):** DAT_MATCH · ATTESTATION · SCHEMA · ARCHIVE_SAFETY`,
+              `**Check ids (advisory):** HDR_VALID · SIZE_SANITY · DEDUP · NAME_FUZZY · STR_SCAN · EVIDENCE_URL`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+
+            const existing = comments.find(c => c.body.includes('<!-- plemu-screen-verdict -->'));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            }
+
+      - name: Fail job if hard-reject
+        if: steps.screen.outputs.overall_exit == '20'
+        run: |
+          echo "::error::plemu-screen returned hard-fail (exit 20). See the PR comment for check ids."
+          exit 1

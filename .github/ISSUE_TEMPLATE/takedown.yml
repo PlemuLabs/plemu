@@ -1,0 +1,85 @@
+name: "Copyright Takedown Notice"
+description: "File a DMCA / copyright takedown notice for a Plemu Registry entry."
+title: "[TAKEDOWN] <Entry id or title>"
+labels: ["dmca", "takedown"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Please read `docs/dmca-policy.md` before filling out this form.**
+        All fields are required for a valid notice. Incomplete submissions may be delayed.
+        For urgent matters, also email the designated agent directly.
+
+  - type: input
+    id: claimed-work
+    attributes:
+      label: "Claimed Work"
+      description: "Title and description of the copyrighted work you own or represent."
+      placeholder: "e.g. 'Starforge Demo' — a Game Boy homebrew game"
+    validations:
+      required: true
+
+  - type: input
+    id: entry-id
+    attributes:
+      label: "Registry Entry ID"
+      description: "The Plemu registry entry id (e.g. gb/starforge-demo). Check the registry directory or the manifest."
+      placeholder: "gb/starforge-demo"
+    validations:
+      required: true
+
+  - type: textarea
+    id: infringing-urls
+    attributes:
+      label: "Infringing URLs / Locations"
+      description: "List all URLs or file paths where the infringing material appears (CDN links, registry paths, etc.)."
+      placeholder: |
+        https://cdn.plemu.xyz/artifacts/...
+        registry/gb/starforge-demo/
+    validations:
+      required: true
+
+  - type: textarea
+    id: ownership-evidence
+    attributes:
+      label: "Evidence of Ownership or Authorization"
+      description: "Describe how you own or are authorized to act on behalf of the copyright owner. Attach files if needed."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: good-faith
+    attributes:
+      label: "Good-Faith Statement"
+      description: "Required under 17 U.S.C. § 512(c)(3)."
+      options:
+        - label: "I have a good-faith belief that the use of the described material is not authorized by the copyright owner, its agent, or the law."
+          required: true
+
+  - type: checkboxes
+    id: accuracy
+    attributes:
+      label: "Accuracy and Penalty of Perjury"
+      options:
+        - label: "I swear, under penalty of perjury, that the information in this notice is accurate, and that I am the copyright owner or am authorized to act on behalf of the copyright owner."
+          required: true
+
+  - type: input
+    id: signature
+    attributes:
+      label: "Signature (Full Legal Name)"
+      description: "Your full legal name constitutes your electronic signature."
+      placeholder: "Full Name"
+    validations:
+      required: true
+
+  - type: input
+    id: contact-email
+    attributes:
+      label: "Contact Email"
+      description: "Email address where we can reach you regarding this notice."
+      placeholder: "you@example.com"
+    validations:
+      required: true

@@ -1,0 +1,27 @@
+[package]
+name = "plemu-dat"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "No-Intro/Redump XML DAT parser → SQLite denylist builder."
+
+[[bin]]
+name = "plemu-dat"
+path = "src/main.rs"
+
+[lib]
+name = "plemu_dat"
+path = "src/lib.rs"
+
+[dependencies]
+quick-xml = { workspace = true }
+rusqlite = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+assert_cmd = { workspace = true }

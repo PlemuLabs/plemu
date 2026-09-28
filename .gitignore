@@ -1,0 +1,49 @@
+# Rust
+target/
+**/target/
+
+# Unity (device app)
+apps/device/unity/Library/
+apps/device/unity/Temp/
+apps/device/unity/.utmp/
+apps/device/unity/Logs/
+apps/device/unity/UserSettings/
+apps/device/unity/obj/
+apps/device/unity/*.csproj
+apps/device/unity/*.sln
+apps/device/unity/editmode-results.xml
+apps/device/unity/playmode-results.xml
+apps/device/unity/*.log
+
+# Native shim build output
+apps/device/native/build/
+
+# Staged native plugins (rebuilt by stage-editor-plugins.sh / stage-android.sh).
+# The shim in Plugins/macOS keeps its committed .meta (import settings); the core
+# in StreamingAssets is regenerated data, so its dylib AND orphan .meta are ignored.
+apps/device/unity/Assets/Plugins/macOS/*.dylib
+# Android native-plugin .so are rebuilt by stage-android.sh; their .meta ARE
+# committed (Android/ARM64 import settings), so ignore only the .so, not the .meta.
+apps/device/unity/Assets/Plugins/Android/libs/**/*.so
+apps/device/unity/Assets/StreamingAssets/Cores/**/*.dylib
+apps/device/unity/Assets/StreamingAssets/Cores/**/*.so
+apps/device/unity/Assets/StreamingAssets/Cores/**/*.dylib.meta
+apps/device/unity/Assets/StreamingAssets/Cores/**/*.so.meta
+
+# The PSG1 APK output is a build artifact — never committed.
+apps/device/build/
+
+# Fetched core source (build_sameboy_macos.sh clones here; never committed)
+cores/.cache/
+
+# Secrets — never commit (dev keys live OUTSIDE the repo, in ../dev-secrets)
+dev-secrets/
+*.pem
+!apps/**/*.pem.meta
+
+# Tooling scratch
+.superpowers/
+.memsearch/
+
+# OS
+.DS_Store

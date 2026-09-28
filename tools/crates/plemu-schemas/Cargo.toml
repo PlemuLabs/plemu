@@ -1,0 +1,14 @@
+[package]
+name = "plemu-schemas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Shared serde types and enums for the Plemu content-trust manifest (SPEC v1)."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+schemars = { workspace = true }
+
+[dev-dependencies]

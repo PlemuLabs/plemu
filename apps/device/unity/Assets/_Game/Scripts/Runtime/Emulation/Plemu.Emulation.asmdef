@@ -1,0 +1,18 @@
+{
+    "name": "Plemu.Emulation",
+    "rootNamespace": "Plemu.Emulation",
+    "references": [
+        "Plemu",
+        "UnityEngine.UI",
+        "UnityEngine.AndroidJNIModule"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

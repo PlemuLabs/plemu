@@ -1,0 +1,17 @@
+{
+    "name": "Plemu",
+    "rootNamespace": "Plemu",
+    "references": [
+        "ChaosNaCl",
+        "Unity.Nuget.Newtonsoft-Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

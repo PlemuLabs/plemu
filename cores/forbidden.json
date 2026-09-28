@@ -1,0 +1,33 @@
+{
+  "forbidden": [
+    "snes9x",
+    "genesis_plus_gx",
+    "picodrive",
+    "fbneo",
+    "fbalpha",
+    "duckstation",
+    "swanstation",
+    "mame2000",
+    "mame2003",
+    "mame2003_plus",
+    "mame2010"
+  ],
+  "forbiddenPrefixes": [
+    "mesen"
+  ],
+  "reasons": {
+    "snes9x": "Non-commercial license — redistribution in a commercial context is prohibited.",
+    "genesis_plus_gx": "Non-commercial license — redistribution in a commercial context is prohibited.",
+    "picodrive": "Non-commercial license — redistribution in a commercial context is prohibited.",
+    "fbneo": "Non-commercial license — redistribution in a commercial context is prohibited.",
+    "fbalpha": "Non-commercial license — predecessor to fbneo; same non-commercial restriction.",
+    "duckstation": "Relicensed in 2024 to a non-commercial license; excluded pending re-verification.",
+    "swanstation": "Derived from duckstation; carries the same 2024 relicensing problem.",
+    "mame2000": "MAME license prohibits commercial distribution; non-commercial clause present.",
+    "mame2003": "MAME license prohibits commercial distribution; non-commercial clause present.",
+    "mame2003_plus": "MAME license prohibits commercial distribution; non-commercial clause present.",
+    "mame2010": "MAME license prohibits commercial distribution; non-commercial clause present.",
+    "mesen": "License pending re-verification; NES core is fceumm. Forbidden until verified and added to expected-licenses.lock."
+  },
+  "note": "This list is deny-by-default. plemu-core-audit hard-fails if any forbidden id or prefix appears anywhere in cores.build.json or expected-licenses.lock. To add a new allowlisted core, open a PR updating cores.build.json + expected-licenses.lock together; a human MUST review the license diff. See docs/adding-a-core.md."
+}

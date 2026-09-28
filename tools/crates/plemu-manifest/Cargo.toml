@@ -1,0 +1,36 @@
+[package]
+name = "plemu-manifest"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Build, sign, verify, and diff Plemu content-trust manifests (SPEC v1)."
+
+[[bin]]
+name = "plemu-manifest"
+path = "src/main.rs"
+
+[lib]
+name = "plemu_manifest"
+path = "src/lib.rs"
+
+[dependencies]
+plemu-schemas = { path = "../plemu-schemas" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+base64 = { workspace = true }
+ed25519-dalek = { workspace = true }
+clap = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+bs58 = { workspace = true }
+
+# Dev-only tooling example (not a shipped CLI). See scripts/e2e-demo.sh.
+[[example]]
+name = "dev_attest"
+path = "examples/dev_attest.rs"

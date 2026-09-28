@@ -1,0 +1,16 @@
+{
+  "keys": [
+    {
+      "keyId": "plemu-manifest-dev-a",
+      "publicKey": "1bc81e91d8b1cbb13472d9461c227d01287abdbaf642fa2d0471316981346b9c",
+      "status": "active",
+      "validFrom": "2026-07-12T00:00:00Z"
+    },
+    {
+      "keyId": "plemu-manifest-dev-b",
+      "publicKey": "b3a544ba95bc44519de7782b6bd0d712808a602bccd3ef016dbb896960cce1f7",
+      "status": "next"
+    }
+  ],
+  "_warning": "DEV KEYS FOR TESTS ONLY. Production active/next keys live in CI environment secrets or KMS; the emergency key is generated offline and is never committed anywhere."
+}
