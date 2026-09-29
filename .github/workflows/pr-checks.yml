@@ -44,31 +44,22 @@ jobs:
           echo "Found entry directories:"
           echo "$ENTRIES"
 
-      # TODO(release): Replace this step with a pinned plemu-screen binary download once a
-      # release exists. Example (fill in after first release):
-      #
-      #   - name: Download plemu-screen binary
-      #     run: |
-      #       curl -fsSL https://github.com/plemu-labs/plemu/releases/download/v0.0.0/plemu-screen-linux-x86_64 \
-      #         -o /usr/local/bin/plemu-screen
-      #       chmod +x /usr/local/bin/plemu-screen
-      #       sha256sum --check <<'EOF'
-      #       <sha256> /usr/local/bin/plemu-screen
-      #       EOF
-      #
-      # Cargo fallback (for development — slow; requires Rust toolchain):
-      # cargo run -p plemu-screen --
-      - name: Install plemu-screen (TODO — no binary yet)
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.93.1"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools
+
+      - name: Build plemu-screen
+        working-directory: tools
+        run: cargo build -p plemu-screen --release
+
+      - name: Install plemu-screen binary
         run: |
-          echo "::warning::plemu-screen binary not yet released. This step is a placeholder."
-          echo "TODO(release): pin plemu-screen binary URL and SHA-256 in this step."
-          # Stub: create a no-op binary so subsequent steps can reference it without hard-failing
-          # the workflow shape during development.
-          cat > /usr/local/bin/plemu-screen << 'STUB'
-          #!/usr/bin/env bash
-          echo '{"tool":"plemu-screen","version":"0.0.0-stub","verdict":"review"}' > "${@: -1}"
-          exit 10
-          STUB
+          sudo cp tools/target/release/plemu-screen /usr/local/bin/plemu-screen
           chmod +x /usr/local/bin/plemu-screen
 
       - name: Run screening for each entry
@@ -85,10 +76,15 @@ jobs:
 
             echo "Screening: $ENTRY_DIR (id: $ENTRY_ID)"
 
+            DENYLIST_ARG=""
+            if [ -f dats/latest/denylist.sqlite ]; then
+              DENYLIST_ARG="--denylist dats/latest/denylist.sqlite"
+            fi
+
             plemu-screen \
               --entry "$ENTRY_DIR" \
-              --denylist dats/latest/denylist.sqlite \
-              --keys keys/manifest-signers.json \
+              $DENYLIST_ARG \
+              --keys tools/keys/manifest-signers.json \
               --out "$REPORT_FILE" || SCREEN_EXIT=$?
             SCREEN_EXIT=${SCREEN_EXIT:-0}
 
@@ -146,9 +142,6 @@ jobs:
             const body = [
               `<!-- plemu-screen-verdict -->`,
               `## ${emoji} plemu-screen: ${label}`,
-              ``,
-              `> **Note:** plemu-screen binary not yet released — this result is from the stub.`,
-              `> TODO(release): remove the note above once a real binary is pinned.`,
               ``,
               verdictTable.replace(/\\n/g, '\n'),
               ``,
