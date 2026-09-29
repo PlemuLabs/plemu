@@ -783,7 +783,7 @@ fn build_empty_directory_without_allow_empty_fails() {
 
 #[test]
 fn git_first_commit_date_returns_timestamp_for_existing_git_repo() {
-    let beta_dir = repo_path("registry/beta");
+    let beta_dir = Path::new(REPO_ROOT).join("../../..").join("registry/beta");
     let sentinel = ts("1999-01-01T00:00:00Z");
     let manifest = plemu_manifest::build_manifest(
         &beta_dir,
