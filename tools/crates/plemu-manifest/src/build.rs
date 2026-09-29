@@ -228,7 +228,9 @@ pub fn collect_entries(
             let meta: RegistryMetadata = serde_json::from_slice(&meta_bytes)?;
             validate_metadata(&meta, &slug)?;
             let revocation = read_revocation(&slug_path, &meta.id)?;
-            entries.push(metadata_to_entry(meta, base_url, added_at, revocation));
+            let entry_added_at =
+                git_first_commit_date(&slug_path).unwrap_or_else(|| added_at.to_string());
+            entries.push(metadata_to_entry(meta, base_url, &entry_added_at, revocation));
         }
     }
 
@@ -241,6 +243,38 @@ pub fn collect_entries(
 
     entries.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(entries)
+}
+
+/// Query git for the first commit timestamp of the given directory.
+/// Format returned is ISO 8601 UTC timestamp e.g. "2026-07-12T00:00:00Z".
+pub fn git_first_commit_date(entry_dir: &Path) -> Option<String> {
+    let output = std::process::Command::new("git")
+        .args([
+            "log",
+            "--diff-filter=A",
+            "--format=%aI",
+            "-1",
+            "--",
+        ])
+        .arg(entry_dir)
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    let trimmed = stdout.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(trimmed) {
+        Some(format_utc(dt.with_timezone(&Utc)))
+    } else {
+        None
+    }
 }
 
 /// Build a complete, validated manifest from a registry directory.

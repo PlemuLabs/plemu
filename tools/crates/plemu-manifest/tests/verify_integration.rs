@@ -780,3 +780,27 @@ fn build_empty_directory_without_allow_empty_fails() {
 
     assert_eq!(manifest.entries.len(), 0);
 }
+
+#[test]
+fn git_first_commit_date_returns_timestamp_for_existing_git_repo() {
+    let beta_dir = repo_path("registry/beta");
+    let manifest = plemu_manifest::build_manifest(
+        &beta_dir,
+        Some("beta"),
+        "https://cdn.plemu.xyz",
+        "plemu-manifest-dev-a",
+        None,
+        None,
+        false,
+    )
+    .expect("build real beta registry");
+
+    let libbet = manifest
+        .entries
+        .iter()
+        .find(|e| e.id == "gb/libbet")
+        .expect("libbet exists");
+    // Libbet was committed to git; its addedAt should be a valid RFC 3339 timestamp
+    assert!(!libbet.added_at.is_empty());
+    assert!(chrono::DateTime::parse_from_rfc3339(&libbet.added_at).is_ok());
+}
