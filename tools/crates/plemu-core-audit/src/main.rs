@@ -12,16 +12,20 @@ use std::path::PathBuf;
 )]
 struct Cli {
     /// Path to the expected-licenses.lock JSON file
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, visible_alias = "licenses", value_name = "FILE", default_value = "cores/expected-licenses.lock")]
     lock: PathBuf,
 
     /// Root directory containing per-core subdirectories
-    #[arg(long, value_name = "DIR")]
+    #[arg(long, value_name = "DIR", default_value = "cores")]
     cores_dir: PathBuf,
 
     /// Optional build-config JSON file
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, visible_alias = "cores", value_name = "FILE")]
     build_config: Option<PathBuf>,
+
+    /// Path to forbidden.json (optional)
+    #[arg(long, value_name = "FILE")]
+    forbidden: Option<PathBuf>,
 
     /// Treat TBD entries as failures (default: warnings only)
     #[arg(long)]
