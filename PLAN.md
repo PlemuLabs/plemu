@@ -2230,7 +2230,7 @@ Every `commit` and `licenseSha256` in `cores/cores.build.json` and `cores/expect
 
 Pin only the cores actually being built: SameBoy (done), plus bsnes, blastem and mgba for A6. The other twelve stay `TBD` until their core is scheduled.
 
-- [ ] **Step 0: Clone each core at its pin — B does this, not A**
+- [x] **Step 0: Clone each core at its pin — B does this, not A**
 
 `licenseSha256` is the hash of a file that only exists after a clone, and A's build scripts refuse to run without a pin. B breaks the cycle by cloning directly:
 
@@ -2242,15 +2242,15 @@ shasum -a 256 cores/.cache/<coreId>/<licenseFile>
 
 Repo URLs and `licenseFile` names are already in `cores/cores.build.json` and `cores/expected-licenses.lock` — note the per-core variation (`License.txt` for stella, `COPYING` for beetle_psx, `LICENSE.TXT` for ppsspp).
 
-- [ ] **Step 1: Pin SameBoy — the value is already known**
+- [x] **Step 1: Pin SameBoy — the value is already known**
 
 Set `commit` to `208ba4afabffab9edde416f2dbb8ae459e34adb8` in both files. This also closes the drift §1.2 item 5 describes, where the shell scripts claim consistency with a lock that says `TBD`.
 
-- [ ] **Step 2: Pin bsnes, blastem and mgba**
+- [x] **Step 2: Pin bsnes, blastem and mgba**
 
 Stream A needs these for A6. Clone each at a chosen upstream commit (Step 0), record it, and confirm the build script's `git rev-parse HEAD` check passes against it.
 
-- [ ] **Step 3: Verify non-strict audit is clean**
+- [x] **Step 3: Verify non-strict audit is clean**
 
 ```bash
 cd tools && cargo run -p plemu-core-audit -- \
@@ -2270,7 +2270,7 @@ cargo run -p plemu-core-audit -- --lock ../cores/expected-licenses.lock \
 
 Expected: `exit=20` with `TBD` findings only. Any *other* finding code is a real problem — read the report.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add cores && git commit -m "chore(cores): pin commits for sameboy, bsnes, blastem, mgba (licence hashes deferred to Phase M)"
