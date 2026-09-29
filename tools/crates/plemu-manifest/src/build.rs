@@ -249,14 +249,15 @@ pub fn collect_entries(
 /// Format returned is ISO 8601 UTC timestamp e.g. "2026-07-12T00:00:00Z".
 pub fn git_first_commit_date(entry_dir: &Path) -> Option<String> {
     let output = std::process::Command::new("git")
+        .current_dir(entry_dir)
         .args([
             "log",
             "--diff-filter=A",
             "--format=%aI",
             "-1",
             "--",
+            "metadata.json",
         ])
-        .arg(entry_dir)
         .output()
         .ok()?;
 

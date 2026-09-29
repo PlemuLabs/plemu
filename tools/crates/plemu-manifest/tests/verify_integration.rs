@@ -784,13 +784,14 @@ fn build_empty_directory_without_allow_empty_fails() {
 #[test]
 fn git_first_commit_date_returns_timestamp_for_existing_git_repo() {
     let beta_dir = repo_path("registry/beta");
+    let sentinel = ts("1999-01-01T00:00:00Z");
     let manifest = plemu_manifest::build_manifest(
         &beta_dir,
         Some("beta"),
         "https://cdn.plemu.xyz",
         "plemu-manifest-dev-a",
         None,
-        None,
+        Some(sentinel),
         false,
     )
     .expect("build real beta registry");
@@ -803,4 +804,5 @@ fn git_first_commit_date_returns_timestamp_for_existing_git_repo() {
     // Libbet was committed to git; its addedAt should be a valid RFC 3339 timestamp
     assert!(!libbet.added_at.is_empty());
     assert!(chrono::DateTime::parse_from_rfc3339(&libbet.added_at).is_ok());
+    assert_ne!(libbet.added_at, plemu_manifest::build::format_utc(sentinel));
 }
