@@ -971,15 +971,15 @@ git commit -m "contracts: freeze pack attestation v1 and creator attestation v2 
 
 ### Task 1.3: Ship the wallet mocks (C leads) ⛔ BLOCKS A4, A5
 
-- [ ] **Step 1: Create the assembly**
+- [x] **Step 1: Create the assembly**
 
 `apps/device/unity/Assets/_Game/Scripts/Runtime/Wallet/Plemu.Wallet.asmdef`, referencing `Plemu` only. Do **not** add wallet references to the `Plemu` assembly — it is deliberately `noEngineReferences: true` and the trust chain must stay engine-free.
 
-- [ ] **Step 2: Write `IWallet.cs` and `ISeatProvider.cs`**
+- [x] **Step 2: Write `IWallet.cs` and `ISeatProvider.cs`**
 
 Exactly the interfaces in §3 Seam A↔C. No additions — if you need another method, amend the contract first and tell Stream A.
 
-- [ ] **Step 3: Write `Mock/MockWallet.cs`**
+- [x] **Step 3: Write `Mock/MockWallet.cs`**
 
 ```csharp
 using System.Threading.Tasks;
@@ -1002,17 +1002,16 @@ namespace Plemu.Wallet.Mock
 }
 ```
 
-- [ ] **Step 4: Write `Mock/MockSeatProvider.cs`**
+- [x] **Step 4: Write `Mock/MockSeatProvider.cs`**
 
 Reads `Application.persistentDataPath/mock-seats.json` — shape `{"packs":["speedrun-club","translation-club"]}` — and returns membership from it. A missing file means no seats, so Stream A can test the 402 path by deleting it.
 
-- [ ] **Step 5: Verify it compiles**
+- [x] **Step 5: Verify it compiles**
 
 In Unity, wait for the domain reload.
-
 Expected: no console errors, and `Plemu.Wallet` appears in the assembly list.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/device/unity/Assets/_Game/Scripts/Runtime/Wallet
