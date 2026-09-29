@@ -194,7 +194,12 @@ pub fn metadata_to_entry(
 /// `revoked: true` — so the device can deny it and sweep it. A malformed
 /// `revocation.json` is a hard error (fail closed): a broken revocation must
 /// never silently produce a live entry.
-pub fn collect_entries(registry: &Path, base_url: &str, added_at: &str) -> Result<Vec<Entry>> {
+pub fn collect_entries(
+    registry: &Path,
+    base_url: &str,
+    added_at: &str,
+    allow_empty: bool,
+) -> Result<Vec<Entry>> {
     let mut entries = Vec::new();
 
     for system_path in read_dir_sorted(registry)? {
@@ -227,8 +232,44 @@ pub fn collect_entries(registry: &Path, base_url: &str, added_at: &str) -> Resul
         }
     }
 
+    if entries.is_empty() && !allow_empty {
+        return Err(ManifestError::Validation(format!(
+            "no entries found in registry at {:?}; empty manifest is forbidden without --allow-empty",
+            registry
+        )));
+    }
+
     entries.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(entries)
+}
+
+/// Build a complete, validated manifest from a registry directory.
+///
+/// If `tier` is `None` and `registry_root` contains tiered subdirectories (`beta` or `main`),
+/// this fails closed to prevent emitting an empty manifest.
+pub fn build_manifest(
+    registry_root: &Path,
+    tier: Option<&str>,
+    base_url: &str,
+    signer_key_id: &str,
+    previous: Option<&Manifest>,
+    now: Option<DateTime<Utc>>,
+    allow_empty: bool,
+) -> Result<Manifest> {
+    if tier.is_none()
+        && (registry_root.join("beta").is_dir() || registry_root.join("main").is_dir())
+    {
+        return Err(ManifestError::Validation(format!(
+            "registry root {:?} contains tiered subdirectories (beta/main) but no --tier was specified; refusing to emit tierless manifest",
+            registry_root
+        )));
+    }
+
+    let generated_at = now.unwrap_or_else(Utc::now);
+    let added_at = format_utc(generated_at);
+    let sequence = next_sequence(previous)?;
+    let entries = collect_entries(registry_root, base_url, &added_at, allow_empty)?;
+    assemble_manifest(entries, generated_at, signer_key_id, sequence)
 }
 
 /// Read a directory's children as sorted paths.
