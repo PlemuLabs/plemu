@@ -7,13 +7,13 @@ namespace Plemu.Tests
     public sealed class PinnedKeysTests
     {
         [Test]
-        public void BuiltIn_ContainsExactlyTwoDevKeys()
+        public void BuiltIn_ContainsExpectedPinnedKeys()
         {
             // Act
             KeyRegistry registry = PinnedKeys.BuiltIn;
 
-            // Assert
-            Assert.That(registry.Keys, Has.Count.EqualTo(2));
+            // Assert (dev-a, dev-b, prod-a, prod-b, emergency-1)
+            Assert.That(registry.Keys, Has.Count.EqualTo(5));
         }
 
         [Test]
@@ -45,6 +45,45 @@ namespace Plemu.Tests
         }
 
         [Test]
+        public void BuiltIn_ProdKeyA_IsActive()
+        {
+            // Act
+            KeyEntry keyProdA = PinnedKeys.BuiltIn.Find("plemu-manifest-prod-a");
+
+            // Assert
+            Assert.That(keyProdA, Is.Not.Null);
+            Assert.That(keyProdA.Status, Is.EqualTo("active"));
+            Assert.That(keyProdA.IsAcceptable, Is.True);
+            Assert.That(keyProdA.PublicKey, Is.EqualTo(PinnedKeys.ProdPublicKeyA));
+        }
+
+        [Test]
+        public void BuiltIn_ProdKeyB_IsNext()
+        {
+            // Act
+            KeyEntry keyProdB = PinnedKeys.BuiltIn.Find("plemu-manifest-prod-b");
+
+            // Assert
+            Assert.That(keyProdB, Is.Not.Null);
+            Assert.That(keyProdB.Status, Is.EqualTo("next"));
+            Assert.That(keyProdB.IsAcceptable, Is.True);
+            Assert.That(keyProdB.PublicKey, Is.EqualTo(PinnedKeys.ProdPublicKeyB));
+        }
+
+        [Test]
+        public void BuiltIn_EmergencyKey_IsEmergency()
+        {
+            // Act
+            KeyEntry keyEmerg = PinnedKeys.BuiltIn.Find("plemu-emergency-1");
+
+            // Assert
+            Assert.That(keyEmerg, Is.Not.Null);
+            Assert.That(keyEmerg.Status, Is.EqualTo("emergency"));
+            Assert.That(keyEmerg.IsAcceptable, Is.True);
+            Assert.That(keyEmerg.PublicKey, Is.EqualTo(PinnedKeys.EmergencyPublicKey));
+        }
+
+        [Test]
         public void BuiltIn_ReturnsFreshInstanceEachCall()
         {
             // Act
@@ -53,7 +92,7 @@ namespace Plemu.Tests
 
             // Assert: mutating one must not affect the other (no shared trust state).
             first.Keys.Clear();
-            Assert.That(second.Keys, Has.Count.EqualTo(2));
+            Assert.That(second.Keys, Has.Count.EqualTo(5));
         }
     }
 }

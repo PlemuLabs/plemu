@@ -112,6 +112,16 @@ mod tests {
             .expect("dev-b present");
         assert_eq!(dev_b.status, KeyStatus::Next);
         assert!(dev_b.valid_from.is_none());
+
+        let prod_a = registry
+            .find("plemu-manifest-prod-a")
+            .expect("prod-a present");
+        assert_eq!(prod_a.status, KeyStatus::Active);
+
+        let emerg = registry
+            .find("plemu-emergency-1")
+            .expect("emergency present");
+        assert_eq!(emerg.status, KeyStatus::Emergency);
     }
 
     #[test]
