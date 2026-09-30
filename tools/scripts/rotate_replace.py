@@ -4,7 +4,7 @@ A sweep rather than a file list: the old public key appears in Rust test
 assertions, C# constants, JSON registries, prose and fixtures, and enumerating
 those by hand is how one gets missed.
 
-spec/SPEC.md is never touched - it is the frozen contract. Signed artifacts
+spec/SPEC.md (now docs/specs/SPEC.md) is never touched - it is the frozen contract. Signed artifacts
 (*.sig) and binaries are skipped because they are regenerated, not edited.
 """
 import os
@@ -19,7 +19,7 @@ SKIP_SUFFIXES = (".sig", ".gb", ".wasm", ".png", ".so", ".dylib", ".meta")
 
 def main() -> None:
     root, old_a, new_a, old_b, new_b, old_w, new_w = sys.argv[1:8]
-    frozen = os.path.join(root, "spec", "SPEC.md")
+    frozen = os.path.join(root, "docs", "specs", "SPEC.md")
     pairs = [(old_a, new_a), (old_b, new_b), (old_w, new_w)]
     changed = []
 

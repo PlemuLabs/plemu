@@ -41,9 +41,11 @@ dev-secrets/
 *.pem
 !apps/**/*.pem.meta
 
-# Tooling scratch
+# Tooling scratch & local agent files
 .superpowers/
 .memsearch/
+.gemini/
+GEMINI.md
 
 # OS
 .DS_Store
