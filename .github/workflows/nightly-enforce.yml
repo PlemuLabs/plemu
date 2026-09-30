@@ -129,18 +129,8 @@ jobs:
       contents: read
       issues: write
     steps:
-      - name: Checkout governance (tools)
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Checkout cores repo
-        uses: actions/checkout@v4
-        with:
-          # TODO(infra): org name final — repository does not exist yet.
-          repository: plemu/plemu-cores
-          path: plemu-cores
-          submodules: recursive
-          # TODO(infra): private repo will need a token here.
-        continue-on-error: true
 
       - name: Install Rust ${{ env.RUST_VERSION }}
         uses: dtolnay/rust-toolchain@stable
@@ -151,15 +141,10 @@ jobs:
         id: audit
         run: |
           set -euo pipefail
-          if [ ! -d plemu-cores/cores ]; then
-            echo "::error::plemu-cores not available (TODO(infra): repo does not exist yet). Failing closed."
-            # The cores repo is required for a real audit; absence must not silently pass.
-            exit 1
-          fi
           cargo run -p plemu-core-audit -- \
-            --lock plemu-cores/cores/expected-licenses.lock \
-            --cores-dir plemu-cores/cores \
-            --build-config plemu-cores/cores/cores.build.json \
+            --cores cores/cores.build.json \
+            --forbidden cores/forbidden.json \
+            --licenses cores/expected-licenses.lock \
             --strict \
             --out core-audit-report.json
 
@@ -183,17 +168,8 @@ jobs:
     name: Forbidden-core guard (belt and braces)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout governance (tools)
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Checkout cores repo
-        uses: actions/checkout@v4
-        with:
-          # TODO(infra): org name final — repository does not exist yet.
-          repository: plemu/plemu-cores
-          path: plemu-cores
-          submodules: recursive
-        continue-on-error: true
 
       - name: Install Rust ${{ env.RUST_VERSION }}
         uses: dtolnay/rust-toolchain@stable
@@ -203,14 +179,10 @@ jobs:
       - name: plemu-core-audit build-config check
         run: |
           set -euo pipefail
-          if [ ! -d plemu-cores/cores ]; then
-            echo "::error::plemu-cores not available (TODO(infra): repo does not exist yet). Failing closed."
-            exit 1
-          fi
           cargo run -p plemu-core-audit -- \
-            --lock plemu-cores/cores/expected-licenses.lock \
-            --cores-dir plemu-cores/cores \
-            --build-config plemu-cores/cores/cores.build.json \
+            --cores cores/cores.build.json \
+            --forbidden cores/forbidden.json \
+            --licenses cores/expected-licenses.lock \
             --strict
 
       - name: Belt-and-braces grep for forbidden ids
@@ -219,16 +191,12 @@ jobs:
           # SPEC §1.5 FORBIDDEN core identifiers. A second, independent check that does
           # not rely on plemu-core-audit parsing: a raw grep over the cores config.
           FORBIDDEN="snes9x genesis_plus_gx picodrive fbneo fbalpha duckstation swanstation mame2000 mame2003 mame2003_plus mame2010 mesen"
-          FILES="plemu-cores/cores/cores.build.json plemu-cores/cores/expected-licenses.lock plemu-cores/cores/forbidden.json"
-          if [ ! -d plemu-cores/cores ]; then
-            echo "::error::plemu-cores not available (TODO(infra): repo does not exist yet). Failing closed."
-            exit 1
-          fi
+          FILES="cores/cores.build.json cores/expected-licenses.lock cores/forbidden.json"
           HIT=0
           for id in $FORBIDDEN; do
             # forbidden.json legitimately LISTS these ids as denied; only scan the
             # config files that must NOT reference them (build + lock).
-            for f in plemu-cores/cores/cores.build.json plemu-cores/cores/expected-licenses.lock; do
+            for f in cores/cores.build.json cores/expected-licenses.lock; do
               [ -f "$f" ] || continue
               if grep -qiE "\"(coreId|core_id)\"[[:space:]]*:[[:space:]]*\"${id}" "$f"; then
                 echo "::error::forbidden core id '${id}' referenced in $f"
@@ -248,16 +216,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: dat-refresh
     steps:
-      - name: Checkout governance (tools)
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Checkout registry
-        uses: actions/checkout@v4
-        with:
-          # TODO(infra): org name final — repository does not exist yet.
-          repository: plemu/plemu-registry
-          path: plemu-registry
-        continue-on-error: true
 
       - name: Install Rust ${{ env.RUST_VERSION }}
         uses: dtolnay/rust-toolchain@stable
@@ -273,19 +233,15 @@ jobs:
         id: screen
         run: |
           set -euo pipefail
-          if [ ! -d plemu-registry/registry ]; then
-            echo "::error::plemu-registry not available (TODO(infra): repo does not exist yet). Failing closed."
-            exit 1
-          fi
           # TODO(infra): re-download each artifact from R2 by sha256 and re-hash it
           # before screening. Today the entries are local dev fixtures and the
           # committed artifact bytes are hashed in place.
           echo "::warning::Screening local fixture artifacts. TODO(infra): re-download artifacts from R2 by sha256 and re-hash."
           set +e
           cargo run -p plemu-screen -- \
-            --all --registry plemu-registry/registry \
+            --all --registry registry/beta \
             --denylist denylist.sqlite \
-            --keys keys/manifest-signers.json \
+            --keys tools/keys/manifest-signers.json \
             --out compliance-report.json
           CODE=$?
           set -e
@@ -355,39 +311,37 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout governance (tools)
-        uses: actions/checkout@v4
-
-      - name: Checkout registry
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: plemu/plemu-registry
-          path: plemu-registry
-        continue-on-error: true
+          fetch-depth: 0
 
       - name: Install Rust ${{ env.RUST_VERSION }}
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
 
-      - name: Build manifest
+      - name: Build manifests (beta and main)
         run: |
           set -euo pipefail
-          if [ ! -d plemu-registry/registry ]; then
-            echo "::error::registry not available (TODO(infra): repo does not exist yet). Failing closed."
-            exit 1
-          fi
-          # TODO(infra): fetch the previously published manifest for sequence
-          # continuation: --previous last-manifest.json (from R2). Without R2 the
-          # sequence restarts at 1 each run, which is fine for a scaffold but MUST
-          # use --previous in production to satisfy the device anti-rollback rule.
+          echo "Building beta manifest..."
           cargo run -p plemu-manifest -- build \
-            --registry plemu-registry/registry \
+            --registry registry \
+            --tier beta \
             --base-url https://cdn.plemu.xyz \
             --signer-key-id plemu-manifest-dev-a \
-            --out manifest.json
+            --out manifest-beta.json
 
-      - name: Sign manifest
+          echo "Building main manifest (allow-empty)..."
+          cargo run -p plemu-manifest -- build \
+            --registry registry \
+            --tier main \
+            --base-url https://cdn.plemu.xyz \
+            --signer-key-id plemu-manifest-dev-a \
+            --out manifest-main.json \
+            --allow-empty
+
+      - name: Sign manifests
         env:
           # TODO(infra): PLEMU_MANIFEST_KEY is an environment secret holding the
           # PKCS#8 Ed25519 PEM. v1.5 replaces this with OIDC -> KMS signing.
@@ -398,38 +352,55 @@ jobs:
             echo "::error::PLEMU_MANIFEST_KEY secret not set (TODO(infra): create environment + secret). Cannot sign — failing closed."
             exit 1
           fi
+          echo "Signing beta manifest..."
           cargo run -p plemu-manifest -- sign \
-            --manifest manifest.json \
+            --manifest manifest-beta.json \
             --key-env PLEMU_MANIFEST_KEY \
             --key-id plemu-manifest-dev-a \
-            --keys keys/manifest-signers.json \
-            --out manifest.sig
+            --keys tools/keys/manifest-signers.json \
+            --out manifest-beta.json.sig
+
+          echo "Signing main manifest..."
+          cargo run -p plemu-manifest -- sign \
+            --manifest manifest-main.json \
+            --key-env PLEMU_MANIFEST_KEY \
+            --key-id plemu-manifest-dev-a \
+            --keys tools/keys/manifest-signers.json \
+            --out manifest-main.json.sig
 
       - name: Verify before publish (abort on mismatch)
         run: |
           set -euo pipefail
-          # Re-verify the freshly signed manifest against the pinned registry. A
+          # Re-verify the freshly signed manifests against the pinned registry. A
           # mismatch here means we would publish an unverifiable manifest — abort.
+          echo "Verifying beta manifest..."
           cargo run -p plemu-manifest -- verify \
-            --manifest manifest.json \
-            --sig manifest.sig \
-            --keys keys/manifest-signers.json
+            --manifest manifest-beta.json \
+            --sig manifest-beta.json.sig \
+            --keys tools/keys/manifest-signers.json
+
+          echo "Verifying main manifest..."
+          cargo run -p plemu-manifest -- verify \
+            --manifest manifest-main.json \
+            --sig manifest-main.json.sig \
+            --keys tools/keys/manifest-signers.json
 
       - name: Publish (TODO — no R2 / release infra yet)
         run: |
           set -euo pipefail
           echo "::warning::Publish steps are SCAFFOLD. TODO(infra): none of the targets below exist yet."
           # TODO(infra): R2 upload via rclone S3 API:
-          #   rclone copyto manifest.json r2:plemu-manifests/manifest.json
-          #   rclone copyto manifest.sig  r2:plemu-manifests/manifest.sig
-          # TODO(infra): single-URL cache purge (Cloudflare) so devices see the new manifest:
-          #   curl -X POST "https://api.cloudflare.com/.../purge_cache" -d '{"files":["https://cdn.plemu.xyz/manifest.json"]}'
+          #   rclone copyto manifest-beta.json r2:plemu-manifests/manifest-beta.json
+          #   rclone copyto manifest-beta.json.sig r2:plemu-manifests/manifest-beta.json.sig
+          #   rclone copyto manifest-main.json r2:plemu-manifests/manifest-main.json
+          #   rclone copyto manifest-main.json.sig r2:plemu-manifests/manifest-main.json.sig
+          # TODO(infra): single-URL cache purge (Cloudflare) so devices see the new manifests:
+          #   curl -X POST "https://api.cloudflare.com/.../purge_cache" -d '{"files":["https://cdn.plemu.xyz/manifest-beta.json","https://cdn.plemu.xyz/manifest-main.json"]}'
           # TODO(infra): immutable by-date copy for audit + rollback:
-          #   rclone copyto manifest.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest.json
-          # TODO(infra): append to changelog.ndjson (one JSON line per publish, with sequence + sha256):
-          #   echo "{\"date\":\"$(date -u +%FT%TZ)\",\"sequence\":$(jq .sequence manifest.json),\"sha256\":\"$(sha256sum manifest.json | cut -d' ' -f1)\"}" >> changelog.ndjson
+          #   rclone copyto manifest-beta.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest-beta.json
+          #   rclone copyto manifest-main.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest-main.json
           # TODO(infra): GitHub release attaching manifest + compliance report + SBOMs:
-          #   gh release create nightly-$(date -u +%Y-%m-%d) manifest.json manifest.sig compliance-report.json sbom-*.json
+          #   gh release create nightly-$(date -u +%Y-%m-%d) manifest-beta.json manifest-beta.json.sig manifest-main.json manifest-main.json.sig compliance-report.json sbom-*.json
           echo "SCAFFOLD publish complete (nothing was actually uploaded)."
 
       - name: Upload signed manifest artifact
@@ -438,8 +409,10 @@ jobs:
         with:
           name: signed-manifest
           path: |
-            manifest.json
-            manifest.sig
+            manifest-beta.json
+            manifest-beta.json.sig
+            manifest-main.json
+            manifest-main.json.sig
           if-no-files-found: warn
 
   # ── (g) notify ────────────────────────────────────────────────────────────────

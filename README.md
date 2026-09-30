@@ -11,11 +11,12 @@ The principle that holds it together: **legal rigour scales with audience size.*
 free. A small group is cheap. Public reach is reviewed. Nobody is stopped from experimenting; anyone
 who wants scale contributes and submits to the process.
 
-> ### → **[`PLAN.md`](PLAN.md)** is the implementation plan
+> ### → **[`docs/superpowers/plans/platform-expansion.md`](docs/superpowers/plans/platform-expansion.md)** is the master implementation plan
 >
 > 43 tasks across three parallel workstreams, each with its verification command and expected
 > output, plus the locked design decisions and the three frozen interface contracts.
-> **Read PLAN.md §0–§4 before touching anything.** This README is the compact version.
+> **Read the plan §0–§4 before touching anything.** This README is the compact version.
+> For the complete product vision, pitch and Portuguese roadmap, see **[`docs/vision-pt.md`](docs/vision-pt.md)**.
 
 ---
 
@@ -60,12 +61,12 @@ check schema version and signer id → anti-rollback on sequence → freshness �
 Takedown is reactive and reaches every rung, including inside private packs, because packs are
 served by signed manifest exactly like stores.
 
-[`spec/SPEC.md`](spec/SPEC.md) is the frozen v1 contract. **Never edit it** — amendments go to
-`SPEC-V2-DELTA.md`, and stale prose is recorded in `SPEC-ERRATA.md`. CI enforces this.
+[`docs/specs/SPEC.md`](docs/specs/SPEC.md) is the frozen v1 contract. **Never edit it** — amendments go to
+`SPEC-V2-DELTA.md`, and stale prose is recorded in [`docs/specs/SPEC-ERRATA.md`](docs/specs/SPEC-ERRATA.md). CI enforces this.
 
 ## 3. Design decisions, locked
 
-Full reasoning in PLAN.md §2. Do not relitigate these mid-implementation; if one turns out wrong,
+Full reasoning in [`docs/superpowers/plans/platform-expansion.md §2`](docs/superpowers/plans/platform-expansion.md). Do not relitigate these mid-implementation; if one turns out wrong,
 stop and escalate rather than working around it.
 
 | # | Decision | Why |
@@ -105,7 +106,7 @@ sources as parameters, so a second lane is a new entry point rather than surgery
 
 ### What is broken
 
-Four things you should know before you start. PLAN.md §1 has all of them with file and line
+Four things you should know before you start. [`docs/superpowers/plans/platform-expansion.md §1`](docs/superpowers/plans/platform-expansion.md) has all of them with file and line
 references.
 
 - **The APK installs but plays nothing.** `Application.streamingAssetsPath` is a `jar:` URL on
@@ -120,7 +121,7 @@ references.
 
 ### Five failure modes worth knowing about
 
-PLAN.md's "Review Focus" — things the design implies that no obvious task would otherwise test, each
+[`platform-expansion.md`'s "Review Focus"](docs/superpowers/plans/platform-expansion.md) — things the design implies that no obvious task would otherwise test, each
 pinned to the task that owns the code: unparseable timestamps diverging between Rust and C# (B4);
 one artifact listed in two manifests with two revocation states (A4); a hostile file arriving through
 SAF (A3); a paid seat on a revoked pack (C7); a cold device booting offline past the grace window
@@ -215,7 +216,9 @@ Frozen on Contracts Day, each shipping a contract document **and a working mock*
 
 | Path | What | Status |
 |---|---|---|
-| `spec/` | The frozen manifest / verification / attestation contract | Built |
+| `docs/specs/` | The frozen manifest / verification / attestation contracts (`SPEC.md`, `SPEC-ERRATA.md`) | Built |
+| `docs/superpowers/` | SDD framework: task design specs and implementation plans | Active |
+| `docs/vision-pt.md` | Portuguese product vision, marketplace economics, and AI roadmap | Current |
 | `apps/device/native/` | C11 libretro host shim — 22-function ABI, all callbacks native-side | Built |
 | `apps/device/unity/` | Unity device app: trust chain, launch gate, emulation runtime | Built |
 | `tools/` | `plemu-*` Rust workspace: manifest build/sign/verify, DAT screening, core audit | Built |
@@ -249,8 +252,8 @@ bash tools/scripts/rotate-dev-keys.sh
 
 It regenerates every signature and attestation in the tree, writes the private keys **outside** the
 repo in `../dev-secrets/`, and re-runs the suite to prove the result is green. It refuses to run if
-keys already exist, and it is re-runnable. `spec/SPEC.md` is never edited, so the now-stale key values
-it documents are recorded in `spec/SPEC-ERRATA.md` instead. Detail: PLAN.md **Task 0.5**.
+keys already exist, and it is re-runnable. `docs/specs/SPEC.md` is never edited, so the now-stale key values
+it documents are recorded in `docs/specs/SPEC-ERRATA.md` instead. Detail: [`platform-expansion.md` **Task 0.5**](docs/superpowers/plans/platform-expansion.md).
 
 These are test keys. Production keys live in KMS and CI secrets; the emergency key is generated
 offline and never touches a repo or a runner.
@@ -277,13 +280,13 @@ Then in Unity:
 3. Play the `Boot` scene: **Library → Libbet → Play**.
 4. APK: menu **Plemu → Build PSG1 APK**. On-hardware runs need a PSG1 DevKit.
 
-Full environment setup, including the Unity MCP and agent tooling, is PLAN.md **Phase 0** — and every
+Full environment setup, including the Unity MCP and agent tooling, is [`platform-expansion.md` **Phase 0**](docs/superpowers/plans/platform-expansion.md) — and every
 developer completes it before writing code.
 
 ## 11. Working conventions
 
 - **Three streams, disjoint trees.** See §6. File changes against the owning stream; don't reach in.
-- **`spec/SPEC.md` is never edited.** CI enforces it.
+- **`docs/specs/SPEC.md` is never edited.** CI enforces it.
 - **Fail closed, never fail silent.** Every refusal carries a typed reason, a user-facing sentence
   under 160 characters that names no enum and no hex code, and a diagnostic with no secrets and no
   absolute paths. A new failure variant without copy fails the build.
@@ -303,8 +306,12 @@ developer completes it before writing code.
 
 | Document | What it covers |
 |---|---|
-| [`PLAN.md`](PLAN.md) | The implementation plan — everything above, in full, plus 43 tasks |
-| [`spec/SPEC.md`](spec/SPEC.md) | The frozen v1 trust contract |
+| [`docs/superpowers/plans/platform-expansion.md`](docs/superpowers/plans/platform-expansion.md) | The master implementation plan — everything above, in full, plus 43 tasks |
+| [`docs/specs/SPEC.md`](docs/specs/SPEC.md) | The frozen v1 trust contract |
+| [`docs/specs/SPEC-ERRATA.md`](docs/specs/SPEC-ERRATA.md) | Official errata and implementation extensions to SPEC v1 |
+| [`docs/vision-pt.md`](docs/vision-pt.md) | Product vision, distribution ladder, marketplace economics & AI roadmap (PT-BR) |
+| [`AGENTS.md`](AGENTS.md) | Canonical technical instructions and invariants for autonomous agents |
+| [`GEMINI.md`](GEMINI.md) | Gemini CLI workspace entry point and guidelines |
 | [`docs/ci-and-testing.md`](docs/ci-and-testing.md) | Every test entry point and how CI runs them |
 | [`docs/upload-process.md`](docs/upload-process.md) | How a game gets into the registry today |
 | [`docs/playsolana-integration.md`](docs/playsolana-integration.md) | What PSG1 still needs, and the six open questions |

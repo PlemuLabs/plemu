@@ -1,6 +1,6 @@
 name: Emergency Revoke
 
-# Manually revoke one or more registry entries and republish a fresh signed
+# Manually revoke or reinstate one or more registry entries and republish a fresh signed
 # manifest. Target: entry off every device within <30 minutes of dispatch.
 #
 # This marks entries revoked by writing a per-entry revocation.json sidecar
@@ -17,12 +17,28 @@ name: Emergency Revoke
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: "Action to take (revoke or reinstate)"
+        type: choice
+        options:
+          - revoke
+          - reinstate
+        default: revoke
+        required: true
+      tier:
+        description: "Registry tier (beta or main)"
+        type: choice
+        options:
+          - beta
+          - main
+        default: beta
+        required: true
       entry_ids:
-        description: "Comma-separated entry ids to revoke, e.g. gb/starforge-demo,wasm4/hello-plemu"
+        description: "Comma-separated entry ids, e.g. gb/starforge-demo,wasm4/hello-plemu"
         type: string
         required: true
       reason:
-        description: "Revocation reason"
+        description: "Revocation or reinstatement reason"
         type: choice
         options:
           - dmca
@@ -31,7 +47,7 @@ on:
           - creator-request
         required: true
       evidence_url:
-        description: "URL to the DMCA notice / dispute / report backing this revocation"
+        description: "URL or reference to the notice / dispute / report backing this action"
         type: string
         required: true
 
@@ -47,127 +63,137 @@ permissions:
 
 jobs:
   revoke:
-    name: Revoke entries and republish
+    name: Revoke or reinstate entries and republish
     runs-on: ubuntu-latest
     # TODO(infra): the same publish environment/secret as the nightly.
     environment: manifest-publish
     steps:
-      - name: Checkout governance (tools)
-        uses: actions/checkout@v4
-
-      - name: Checkout registry (writable)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          # TODO(infra): org name final — repository does not exist yet.
-          repository: plemu/plemu-registry
-          path: plemu-registry
-          # TODO(infra): a bot token with contents:write is required to push the
-          # revocation commit back to the registry.
-          # token: ${{ secrets.PLEMU_REGISTRY_BOT_TOKEN }}
-        continue-on-error: true
+          fetch-depth: 0
 
       - name: Install Rust ${{ env.RUST_VERSION }}
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_VERSION }}
 
-      - name: Write revocation sidecars
+      - name: Apply revocation or reinstatement
         id: revoke
         env:
+          ACTION: ${{ inputs.action }}
+          TIER: ${{ inputs.tier }}
           ENTRY_IDS: ${{ inputs.entry_ids }}
           REASON: ${{ inputs.reason }}
           EVIDENCE_URL: ${{ inputs.evidence_url }}
         run: |
           set -euo pipefail
-          if [ ! -d plemu-registry/registry ]; then
-            echo "::error::registry not available (TODO(infra): repo does not exist yet). Cannot revoke — failing closed."
+          if [ ! -d "registry/${TIER}" ]; then
+            echo "::error::registry tier 'registry/${TIER}' does not exist. Failing closed."
             exit 1
           fi
           NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          # Revocation is a per-entry SIDECAR file (SPEC §4): metadata.json stays the
-          # Entry-minus-revoked* record; the presence of revocation.json is what marks
-          # an entry revoked, and `plemu-manifest build` reads it to emit revoked:true.
+          EVENT_TYPE="removed"
+          if [ "$ACTION" = "reinstate" ]; then
+            EVENT_TYPE="reinstated"
+          fi
+
           IFS=',' read -ra IDS <<< "$ENTRY_IDS"
           for RAW in "${IDS[@]}"; do
             ID="$(echo "$RAW" | xargs)"   # trim whitespace
             [ -z "$ID" ] && continue
-            DIR="plemu-registry/registry/${ID}"
+            DIR="registry/${TIER}/${ID}"
             META="${DIR}/metadata.json"
             if [ ! -f "$META" ]; then
               echo "::error::no metadata.json for entry '${ID}' at ${META}"
               exit 1
             fi
-            echo "Revoking ${ID} (reason=${REASON}) via revocation.json sidecar"
-            # Write revocation.json = { reason, revokedAt }. reason must be one of the
-            # SPEC RevokedReason values (enforced by the workflow_dispatch choice input
-            # AND re-validated by build's RevokedReason parse).
+
             REV="${DIR}/revocation.json"
-            jq -n --arg reason "$REASON" --arg now "$NOW" \
-              '{reason:$reason, revokedAt:$now}' > "$REV"
-            # Validate before leaving it in place — never write a corrupt sidecar.
-            python3 -m json.tool "$REV" > /dev/null
-            # Append an audit line to removals.ndjson.
-            jq -c -n --arg id "$ID" --arg reason "$REASON" --arg evidence "$EVIDENCE_URL" --arg now "$NOW" \
-              '{id:$id, reason:$reason, evidenceUrl:$evidence, revokedAt:$now}' \
-              >> plemu-registry/removals.ndjson
+            if [ "$ACTION" = "revoke" ]; then
+              echo "Revoking ${ID} (reason=${REASON}) via revocation.json sidecar"
+              jq -n --arg reason "$REASON" --arg now "$NOW" \
+                '{reason:$reason, revokedAt:$now}' > "$REV"
+              python3 -m json.tool "$REV" > /dev/null
+            else
+              echo "Reinstating ${ID} by removing revocation.json sidecar"
+              rm -f "$REV"
+            fi
+
+            # Append an audit line to removals.ndjson matching SPEC in registry/docs/dmca-policy.md
+            jq -c -n --arg eventType "$EVENT_TYPE" --arg entryId "$ID" --arg reason "$REASON" --arg timestamp "$NOW" --arg noticeRef "$EVIDENCE_URL" \
+              '{eventType:$eventType, entryId:$entryId, reason:$reason, timestamp:$timestamp, noticeRef:$noticeRef}' \
+              >> registry/removals.ndjson
           done
-          echo "revoked_at=$NOW" >> "$GITHUB_OUTPUT"
+          echo "action_at=$NOW" >> "$GITHUB_OUTPUT"
 
       - name: Commit revocation (TODO — bot token)
         env:
+          ACTION: ${{ inputs.action }}
           REASON: ${{ inputs.reason }}
         run: |
           set -euo pipefail
           # TODO(infra): needs the plemu-registry-bot app token (contents:write on
           # the registry) to actually push. Locally we stage + show the diff so the
           # workflow shape is real, but do not fake a push.
-          cd plemu-registry
           git config user.name "plemu-registry-bot"
           git config user.email "bot@plemu.xyz"
-          git add -A
+          git add registry/
           echo "=== staged revocation diff ==="
           git --no-pager diff --cached --stat || true
           echo "::warning::Not pushing: TODO(infra): plemu-registry-bot app token required."
-          # git commit -m "revoke: ${REASON} (emergency) [run ${{ github.run_id }}]"
+          # git commit -m "${ACTION}: ${REASON} (emergency) [run ${{ github.run_id }}]"
           # git push
 
       - name: Rebuild manifest
         env:
+          ACTION: ${{ inputs.action }}
+          TIER: ${{ inputs.tier }}
           ENTRY_IDS: ${{ inputs.entry_ids }}
         run: |
           set -euo pipefail
           # TODO(infra): --previous last-manifest.json from R2 for sequence continuity.
           cargo run -p plemu-manifest -- build \
-            --registry plemu-registry/registry \
+            --registry registry \
+            --tier "$TIER" \
             --base-url https://cdn.plemu.xyz \
             --signer-key-id plemu-manifest-dev-a \
-            --out manifest.json
+            --out "manifest-${TIER}.json"
 
-          # `build` reads each entry's revocation.json sidecar and emits
-          # revoked:true for it (SPEC §4). Assert every requested id now materializes
-          # as revoked:true in the manifest — fail closed if any is still live (e.g.
-          # a typo'd id whose sidecar landed in the wrong dir).
+          # Assert that requested entries materialized with the expected revocation status
           IFS=',' read -ra IDS <<< "$ENTRY_IDS"
-          STILL_LIVE=0
+          CHECK_FAILED=0
           for RAW in "${IDS[@]}"; do
             ID="$(echo "$RAW" | xargs)"
             [ -z "$ID" ] && continue
-            REVOKED=$(jq -r --arg id "$ID" \
-              '[.entries[] | select(.id==$id and .revoked==true)] | length' manifest.json)
-            if [ "$REVOKED" = "0" ]; then
-              echo "::error::entry '$ID' is NOT revoked:true in the rebuilt manifest — revocation did not take effect."
-              STILL_LIVE=1
+            if [ "$ACTION" = "revoke" ]; then
+              REVOKED=$(jq -r --arg id "$ID" \
+                '[.entries[] | select(.id==$id and .revoked==true)] | length' "manifest-${TIER}.json")
+              if [ "$REVOKED" = "0" ]; then
+                echo "::error::entry '$ID' is NOT revoked:true in rebuilt manifest — revocation did not take effect."
+                CHECK_FAILED=1
+              else
+                echo "entry '$ID' is revoked:true in the manifest."
+              fi
             else
-              echo "entry '$ID' is revoked:true in the manifest."
+              REVOKED=$(jq -r --arg id "$ID" \
+                '[.entries[] | select(.id==$id and .revoked==true)] | length' "manifest-${TIER}.json")
+              if [ "$REVOKED" != "0" ]; then
+                echo "::error::entry '$ID' is STILL revoked in rebuilt manifest — reinstatement did not take effect."
+                CHECK_FAILED=1
+              else
+                echo "entry '$ID' is reinstated (revoked:false) in the manifest."
+              fi
             fi
           done
-          if [ "$STILL_LIVE" -ne 0 ]; then
-            echo "Revocation did not take effect. Check that revocation.json was written into the correct entry dir. Failing closed."
+          if [ "$CHECK_FAILED" -ne 0 ]; then
+            echo "Operation did not take effect. Check sidecar mutations. Failing closed."
             exit 1
           fi
 
       - name: Sign manifest
         env:
+          TIER: ${{ inputs.tier }}
           # TODO(infra): PLEMU_MANIFEST_KEY environment secret (same as nightly).
           PLEMU_MANIFEST_KEY: ${{ secrets.PLEMU_MANIFEST_KEY }}
         run: |
@@ -177,38 +203,42 @@ jobs:
             exit 1
           fi
           cargo run -p plemu-manifest -- sign \
-            --manifest manifest.json \
+            --manifest "manifest-${TIER}.json" \
             --key-env PLEMU_MANIFEST_KEY \
             --key-id plemu-manifest-dev-a \
-            --keys keys/manifest-signers.json \
-            --out manifest.sig
+            --keys tools/keys/manifest-signers.json \
+            --out "manifest-${TIER}.json.sig"
 
       - name: Verify before publish (abort on mismatch)
+        env:
+          TIER: ${{ inputs.tier }}
         run: |
           set -euo pipefail
           cargo run -p plemu-manifest -- verify \
-            --manifest manifest.json \
-            --sig manifest.sig \
-            --keys keys/manifest-signers.json
+            --manifest "manifest-${TIER}.json" \
+            --sig "manifest-${TIER}.json.sig" \
+            --keys tools/keys/manifest-signers.json
 
       - name: Publish (TODO — no R2 / release infra yet)
+        env:
+          TIER: ${{ inputs.tier }}
         run: |
           set -euo pipefail
           echo "::warning::Publish is SCAFFOLD. TODO(infra): R2 + cache purge + release do not exist yet."
           # TODO(infra): identical publish path to the nightly sign-and-publish job:
-          #   rclone copyto manifest.json r2:plemu-manifests/manifest.json
-          #   rclone copyto manifest.sig  r2:plemu-manifests/manifest.sig
-          #   curl -X POST <cloudflare purge> -d '{"files":["https://cdn.plemu.xyz/manifest.json"]}'
-          #   rclone copyto manifest.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest.json
-          #   gh release create emergency-$(date -u +%Y-%m-%dT%H%M%SZ) manifest.json manifest.sig
+          #   rclone copyto manifest-${TIER}.json r2:plemu-manifests/manifest-${TIER}.json
+          #   rclone copyto manifest-${TIER}.json.sig  r2:plemu-manifests/manifest-${TIER}.json.sig
+          #   curl -X POST <cloudflare purge> -d "{\"files\":[\"https://cdn.plemu.xyz/manifest-${TIER}.json\"]}"
+          #   rclone copyto manifest-${TIER}.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest-${TIER}.json
+          #   gh release create emergency-${TIER}-$(date -u +%Y-%m-%dT%H%M%SZ) manifest-${TIER}.json manifest-${TIER}.json.sig
           echo "Target: entry off every device within <30 min of this dispatch."
 
       - name: Upload manifest artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: emergency-manifest
+          name: emergency-manifest-${{ inputs.tier }}
           path: |
-            manifest.json
-            manifest.sig
+            manifest-${{ inputs.tier }}.json
+            manifest-${{ inputs.tier }}.json.sig
           if-no-files-found: warn

@@ -9,7 +9,7 @@ use std::process::ExitCode;
 
 use chrono::Utc;
 use clap::{Parser, Subcommand};
-use plemu_manifest::build::{assemble_manifest, collect_entries, format_utc, next_sequence};
+use plemu_manifest::build::format_utc;
 use plemu_manifest::crypto;
 use plemu_manifest::diff::diff_manifests;
 use plemu_manifest::error::{ManifestError, Result};
@@ -77,6 +77,9 @@ struct BuildArgs {
     /// When `--tier` is set and `--out` is omitted, defaults to `manifest-<tier>.json`.
     #[arg(long)]
     out: Option<PathBuf>,
+    /// Allow building an empty manifest (required for empty tiers like main).
+    #[arg(long)]
+    allow_empty: bool,
 }
 
 #[derive(Parser)]
@@ -239,7 +242,6 @@ fn cmd_build(args: BuildArgs) -> Result<()> {
     let (registry, out) = resolve_tier_args(args.tier.as_deref(), args.registry, args.out)?;
 
     let generated_at = resolve_now(args.now.as_deref())?;
-    let added_at = format_utc(generated_at);
 
     let previous = match &args.previous {
         Some(path) => {
@@ -249,10 +251,16 @@ fn cmd_build(args: BuildArgs) -> Result<()> {
         }
         None => None,
     };
-    let sequence = next_sequence(previous.as_ref())?;
 
-    let entries = collect_entries(&registry, &args.base_url, &added_at)?;
-    let manifest = assemble_manifest(entries, generated_at, &args.signer_key_id, sequence)?;
+    let manifest = plemu_manifest::build_manifest(
+        &registry,
+        args.tier.as_deref(),
+        &args.base_url,
+        &args.signer_key_id,
+        previous.as_ref(),
+        Some(generated_at),
+        args.allow_empty,
+    )?;
 
     let mut json = serde_json::to_string_pretty(&manifest)?;
     json.push('\n');
@@ -265,7 +273,8 @@ fn cmd_build(args: BuildArgs) -> Result<()> {
 /// Rules (SPEC §5 M2 extension):
 /// - `--tier` must be one of the known tiers (`beta`, `main`); unknown values error loudly.
 /// - When `--tier` is given:
-///   - `registry` defaults to `<cwd>/<tier>` if `--registry` is omitted.
+///   - `registry` defaults to `<cwd>/<tier>` if `--registry` is omitted;
+///     if `--registry` is given, resolves to `<registry>/<tier>`.
 ///   - `out` defaults to `manifest-<tier>.json` in cwd if `--out` is omitted.
 /// - When neither `--tier` nor `--registry` is given → error (one is required).
 /// - Explicit `--registry` / `--out` always override the tier-derived defaults.
@@ -283,7 +292,16 @@ fn resolve_tier_args(
                     KNOWN_TIERS.join(", ")
                 )));
             }
-            let resolved_registry = registry.unwrap_or_else(|| PathBuf::from(t));
+            let resolved_registry = match registry {
+                Some(r) => {
+                    if r.ends_with(t) {
+                        r
+                    } else {
+                        r.join(t)
+                    }
+                }
+                None => PathBuf::from(t),
+            };
             let resolved_out = out.unwrap_or_else(|| PathBuf::from(format!("manifest-{t}.json")));
             Ok((resolved_registry, resolved_out))
         }
