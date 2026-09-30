@@ -230,7 +230,12 @@ pub fn collect_entries(
             let revocation = read_revocation(&slug_path, &meta.id)?;
             let entry_added_at =
                 git_first_commit_date(&slug_path).unwrap_or_else(|| added_at.to_string());
-            entries.push(metadata_to_entry(meta, base_url, &entry_added_at, revocation));
+            entries.push(metadata_to_entry(
+                meta,
+                base_url,
+                &entry_added_at,
+                revocation,
+            ));
         }
     }
 

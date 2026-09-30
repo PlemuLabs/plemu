@@ -12,7 +12,12 @@ use std::path::PathBuf;
 )]
 struct Cli {
     /// Path to the expected-licenses.lock JSON file
-    #[arg(long, visible_alias = "licenses", value_name = "FILE", default_value = "cores/expected-licenses.lock")]
+    #[arg(
+        long,
+        visible_alias = "licenses",
+        value_name = "FILE",
+        default_value = "cores/expected-licenses.lock"
+    )]
     lock: PathBuf,
 
     /// Root directory containing per-core subdirectories

@@ -558,8 +558,13 @@ fn build_honors_revocation_sidecar() {
         Some(r#"{ "reason": "dmca", "revokedAt": "2026-07-13T09:30:00Z" }"#),
     );
 
-    let entries = collect_entries(registry, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z", false)
-        .expect("collect_entries");
+    let entries = collect_entries(
+        registry,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect("collect_entries");
     let manifest = assemble_manifest(
         entries,
         ts("2026-07-13T00:00:00Z"),
@@ -612,8 +617,13 @@ fn build_fails_closed_on_malformed_revocation() {
         sha,
         Some(r#"{ "reason": "not-a-real-reason", "revokedAt": "2026-07-13T09:30:00Z" }"#),
     );
-    let err = collect_entries(registry, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z", false)
-        .expect_err("malformed revocation reason must fail the build");
+    let err = collect_entries(
+        registry,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect_err("malformed revocation reason must fail the build");
     let msg = format!("{err}");
     assert!(
         msg.contains("bad-reason") && msg.contains("revocation.json"),
@@ -631,8 +641,13 @@ fn build_fails_closed_on_malformed_revocation() {
         sha,
         Some(r#"{ "reason": "malware", "revokedAt": "yesterday" }"#),
     );
-    let err2 = collect_entries(registry2, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z", false)
-        .expect_err("non-ISO revokedAt must fail the build");
+    let err2 = collect_entries(
+        registry2,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect_err("non-ISO revokedAt must fail the build");
     assert!(
         format!("{err2}").contains("revokedAt"),
         "error must name the bad field: {err2}"
@@ -673,17 +688,25 @@ fn tier_beta_builds_from_beta_subdir() {
     );
 
     // Build from the beta subdir — must contain the beta entry.
-    let beta_entries =
-        collect_entries(&beta_dir, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z", false)
-            .expect("collect beta entries");
+    let beta_entries = collect_entries(
+        &beta_dir,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect("collect beta entries");
     assert_eq!(beta_entries.len(), 1, "beta must have exactly 1 entry");
     assert_eq!(beta_entries[0].id, "wasm4/hello-plemu");
     assert!(!beta_entries[0].revoked, "beta entry must be live");
 
     // Build from the main subdir — must be empty (no entries promoted yet).
-    let main_entries =
-        collect_entries(&main_dir, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z", true)
-            .expect("collect main entries (empty is valid)");
+    let main_entries = collect_entries(
+        &main_dir,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        true,
+    )
+    .expect("collect main entries (empty is valid)");
     assert_eq!(
         main_entries.len(),
         0,
