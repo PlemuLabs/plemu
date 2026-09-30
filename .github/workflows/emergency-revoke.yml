@@ -219,19 +219,37 @@ jobs:
             --sig "manifest-${TIER}.json.sig" \
             --keys tools/keys/manifest-signers.json
 
-      - name: Publish (TODO — no R2 / release infra yet)
+      - name: Publish to Cloudflare R2
         env:
           TIER: ${{ inputs.tier }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
         run: |
           set -euo pipefail
-          echo "::warning::Publish is SCAFFOLD. TODO(infra): R2 + cache purge + release do not exist yet."
-          # TODO(infra): identical publish path to the nightly sign-and-publish job:
-          #   rclone copyto manifest-${TIER}.json r2:plemu-manifests/manifest-${TIER}.json
-          #   rclone copyto manifest-${TIER}.json.sig  r2:plemu-manifests/manifest-${TIER}.json.sig
-          #   curl -X POST <cloudflare purge> -d "{\"files\":[\"https://cdn.plemu.xyz/manifest-${TIER}.json\"]}"
-          #   rclone copyto manifest-${TIER}.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest-${TIER}.json
-          #   gh release create emergency-${TIER}-$(date -u +%Y-%m-%dT%H%M%SZ) manifest-${TIER}.json manifest-${TIER}.json.sig
-          echo "Target: entry off every device within <30 min of this dispatch."
+          echo "==> Publishing revoked manifest-${TIER}.json to R2"
+          aws s3 cp "manifest-${TIER}.json" "s3://plemu-content/manifests/store/manifest-${TIER}.json" --endpoint-url "$R2_ENDPOINT" --content-type application/json
+          aws s3 cp "manifest-${TIER}.json.sig" "s3://plemu-content/manifests/store/manifest-${TIER}.json.sig" --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+          aws s3 cp "manifest-${TIER}.json" "s3://plemu-content/manifest-${TIER}.json" --endpoint-url "$R2_ENDPOINT" --content-type application/json
+          aws s3 cp "manifest-${TIER}.json.sig" "s3://plemu-content/manifest-${TIER}.json.sig" --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+
+          DATE_STR=$(date -u +%Y-%m-%d)
+          aws s3 cp "manifest-${TIER}.json" "s3://plemu-content/by-date/${DATE_STR}/manifest-${TIER}.json" --endpoint-url "$R2_ENDPOINT"
+
+      - name: Purge Cloudflare CDN Cache
+        if: success()
+        env:
+          TIER: ${{ inputs.tier }}
+          CF_TOKEN: ${{ secrets.CF_PURGE_API_TOKEN }}
+          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+          echo "==> Purging emergency revoked manifest from Cloudflare edge cache"
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "{\"files\":[\"https://cdn.plemu.xyz/manifest-${TIER}.json\",\"https://cdn.plemu.xyz/manifest-${TIER}.json.sig\",\"https://cdn.plemu.xyz/manifests/store/manifest-${TIER}.json\",\"https://cdn.plemu.xyz/manifests/store/manifest-${TIER}.json.sig\"]}" | jq .
 
       - name: Upload manifest artifact
         if: always()
