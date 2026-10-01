@@ -59,8 +59,7 @@ jobs:
 
       - name: Install plemu-screen binary
         run: |
-          sudo cp tools/target/release/plemu-screen /usr/local/bin/plemu-screen
-          chmod +x /usr/local/bin/plemu-screen
+          sudo install -m 0755 tools/target/release/plemu-screen /usr/local/bin/plemu-screen
 
       - name: Run screening for each entry
         id: screen
