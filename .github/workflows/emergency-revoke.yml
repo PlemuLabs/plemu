@@ -151,7 +151,7 @@ jobs:
         run: |
           set -euo pipefail
           # TODO(infra): --previous last-manifest.json from R2 for sequence continuity.
-          cargo run -p plemu-manifest -- build \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- build \
             --registry registry \
             --tier "$TIER" \
             --base-url https://cdn.plemu.xyz \
@@ -200,7 +200,7 @@ jobs:
             echo "::error::PLEMU_MANIFEST_KEY not set (TODO(infra): environment secret). Cannot sign — failing closed."
             exit 1
           fi
-          cargo run -p plemu-manifest -- sign \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- sign \
             --manifest "manifest-${TIER}.json" \
             --key-env PLEMU_MANIFEST_KEY \
             --key-id plemu-manifest-prod-a \
@@ -212,7 +212,7 @@ jobs:
           TIER: ${{ inputs.tier }}
         run: |
           set -euo pipefail
-          cargo run -p plemu-manifest -- verify \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- verify \
             --manifest "manifest-${TIER}.json" \
             --sig "manifest-${TIER}.json.sig" \
             --keys tools/keys/manifest-signers.json

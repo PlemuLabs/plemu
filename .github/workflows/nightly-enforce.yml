@@ -92,7 +92,7 @@ jobs:
       - name: Build denylist
         run: |
           set -euo pipefail
-          cargo run -p plemu-dat -- build --input dats --out denylist.sqlite --source nightly
+          cargo run --manifest-path tools/Cargo.toml -p plemu-dat -- build --input dats --out denylist.sqlite --source nightly
 
       - name: Staleness policy
         run: |
@@ -141,7 +141,7 @@ jobs:
         id: audit
         run: |
           set -euo pipefail
-          cargo run -p plemu-core-audit -- \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-core-audit -- \
             --cores cores/cores.build.json \
             --forbidden cores/forbidden.json \
             --licenses cores/expected-licenses.lock \
@@ -179,7 +179,7 @@ jobs:
       - name: plemu-core-audit build-config check
         run: |
           set -euo pipefail
-          cargo run -p plemu-core-audit -- \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-core-audit -- \
             --cores cores/cores.build.json \
             --forbidden cores/forbidden.json \
             --licenses cores/expected-licenses.lock \
@@ -238,7 +238,7 @@ jobs:
           # committed artifact bytes are hashed in place.
           echo "::warning::Screening local fixture artifacts. TODO(infra): re-download artifacts from R2 by sha256 and re-hash."
           set +e
-          cargo run -p plemu-screen -- \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-screen -- \
             --all --registry registry/beta \
             --denylist denylist.sqlite \
             --keys tools/keys/manifest-signers.json \
@@ -323,7 +323,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Building beta manifest..."
-          cargo run -p plemu-manifest -- build \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- build \
             --registry registry \
             --tier beta \
             --base-url https://cdn.plemu.xyz \
@@ -331,7 +331,7 @@ jobs:
             --out manifest-beta.json
 
           echo "Building main manifest (allow-empty)..."
-          cargo run -p plemu-manifest -- build \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- build \
             --registry registry \
             --tier main \
             --base-url https://cdn.plemu.xyz \
@@ -349,7 +349,7 @@ jobs:
             exit 1
           fi
           echo "Signing beta manifest..."
-          cargo run -p plemu-manifest -- sign \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- sign \
             --manifest manifest-beta.json \
             --key-env PLEMU_MANIFEST_KEY \
             --key-id plemu-manifest-prod-a \
@@ -357,7 +357,7 @@ jobs:
             --out manifest-beta.json.sig
 
           echo "Signing main manifest..."
-          cargo run -p plemu-manifest -- sign \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- sign \
             --manifest manifest-main.json \
             --key-env PLEMU_MANIFEST_KEY \
             --key-id plemu-manifest-prod-a \
@@ -370,13 +370,13 @@ jobs:
           # Re-verify the freshly signed manifests against the pinned registry. A
           # mismatch here means we would publish an unverifiable manifest — abort.
           echo "Verifying beta manifest..."
-          cargo run -p plemu-manifest -- verify \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- verify \
             --manifest manifest-beta.json \
             --sig manifest-beta.json.sig \
             --keys tools/keys/manifest-signers.json
 
           echo "Verifying main manifest..."
-          cargo run -p plemu-manifest -- verify \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- verify \
             --manifest manifest-main.json \
             --sig manifest-main.json.sig \
             --keys tools/keys/manifest-signers.json
