@@ -137,15 +137,19 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
 
-      - name: Run plemu-core-audit --strict
+      - name: Run plemu-core-audit
         id: audit
         run: |
           set -euo pipefail
+          STRICT_FLAG=""
+          if [ "${{ inputs.mode || 'full' }}" = "full" ]; then
+            STRICT_FLAG="--strict"
+          fi
           cargo run --manifest-path tools/Cargo.toml -p plemu-core-audit -- \
             --cores cores/cores.build.json \
             --forbidden cores/forbidden.json \
             --licenses cores/expected-licenses.lock \
-            --strict \
+            $STRICT_FLAG \
             --out core-audit-report.json
 
       - name: Open license-drift issue on failure
@@ -179,11 +183,15 @@ jobs:
       - name: plemu-core-audit build-config check
         run: |
           set -euo pipefail
+          STRICT_FLAG=""
+          if [ "${{ inputs.mode || 'full' }}" = "full" ]; then
+            STRICT_FLAG="--strict"
+          fi
           cargo run --manifest-path tools/Cargo.toml -p plemu-core-audit -- \
             --cores cores/cores.build.json \
             --forbidden cores/forbidden.json \
             --licenses cores/expected-licenses.lock \
-            --strict
+            $STRICT_FLAG
 
       - name: Belt-and-braces grep for forbidden ids
         run: |
