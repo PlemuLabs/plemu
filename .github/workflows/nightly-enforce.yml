@@ -306,8 +306,6 @@ jobs:
       - registry-audit
       - build-cores
       - build-app
-    # TODO(infra): create this environment + attach the PLEMU_MANIFEST_KEY secret.
-    environment: manifest-publish
     permissions:
       contents: read
     steps:
@@ -329,7 +327,7 @@ jobs:
             --registry registry \
             --tier beta \
             --base-url https://cdn.plemu.xyz \
-            --signer-key-id plemu-manifest-dev-a \
+            --signer-key-id plemu-manifest-prod-a \
             --out manifest-beta.json
 
           echo "Building main manifest (allow-empty)..."
@@ -337,26 +335,24 @@ jobs:
             --registry registry \
             --tier main \
             --base-url https://cdn.plemu.xyz \
-            --signer-key-id plemu-manifest-dev-a \
+            --signer-key-id plemu-manifest-prod-a \
             --out manifest-main.json \
             --allow-empty
 
       - name: Sign manifests
         env:
-          # TODO(infra): PLEMU_MANIFEST_KEY is an environment secret holding the
-          # PKCS#8 Ed25519 PEM. v1.5 replaces this with OIDC -> KMS signing.
           PLEMU_MANIFEST_KEY: ${{ secrets.PLEMU_MANIFEST_KEY }}
         run: |
           set -euo pipefail
           if [ -z "${PLEMU_MANIFEST_KEY:-}" ]; then
-            echo "::error::PLEMU_MANIFEST_KEY secret not set (TODO(infra): create environment + secret). Cannot sign — failing closed."
+            echo "::error::PLEMU_MANIFEST_KEY secret not set. Cannot sign — failing closed."
             exit 1
           fi
           echo "Signing beta manifest..."
           cargo run -p plemu-manifest -- sign \
             --manifest manifest-beta.json \
             --key-env PLEMU_MANIFEST_KEY \
-            --key-id plemu-manifest-dev-a \
+            --key-id plemu-manifest-prod-a \
             --keys tools/keys/manifest-signers.json \
             --out manifest-beta.json.sig
 
@@ -364,7 +360,7 @@ jobs:
           cargo run -p plemu-manifest -- sign \
             --manifest manifest-main.json \
             --key-env PLEMU_MANIFEST_KEY \
-            --key-id plemu-manifest-dev-a \
+            --key-id plemu-manifest-prod-a \
             --keys tools/keys/manifest-signers.json \
             --out manifest-main.json.sig
 
@@ -430,11 +426,15 @@ jobs:
           ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           set -euo pipefail
-          echo "==> Purging manifest URLs from Cloudflare edge cache"
-          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${CF_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data '{"files":["https://cdn.plemu.xyz/manifest-beta.json","https://cdn.plemu.xyz/manifest-beta.json.sig","https://cdn.plemu.xyz/manifests/store/manifest-beta.json","https://cdn.plemu.xyz/manifests/store/manifest-beta.json.sig"]}' | jq .
+          if [ -n "${ZONE_ID:-}" ] && [ -n "${CF_TOKEN:-}" ]; then
+            echo "==> Purging manifest URLs from Cloudflare edge cache"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+              -H "Authorization: Bearer ${CF_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{"files":["https://cdn.plemu.xyz/manifest-beta.json","https://cdn.plemu.xyz/manifest-beta.json.sig","https://cdn.plemu.xyz/manifests/store/manifest-beta.json","https://cdn.plemu.xyz/manifests/store/manifest-beta.json.sig"]}' | jq .
+          else
+            echo "==> Notice: ZONE_ID or CF_TOKEN not configured (custom domain not yet attached). Skipping CDN edge cache purge."
+          fi
 
       - name: Upload signed manifest artifact
         if: always()
