@@ -1,7 +1,7 @@
 {
-  "message": "Plemu Creator Attestation v1\n\nTitle: Hello Plemu\nSystem: wasm4\nSHA-256: 93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476\nLicense: CC0\nStatement: I created this work or have the right to distribute it under the stated license; it contains no third-party copyrighted material.\nWallet: Dos7vSEN2rFFsinucJsaLyJ8B2EhkkcyrM6zu73rjcHa\nTimestamp: 2026-07-12T00:00:00Z",
+  "message": "Plemu Creator Attestation v1\n\nTitle: Hello Plemu\nSystem: wasm4\nSHA-256: 93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476\nLicense: CC0\nStatement: I created this work or have the right to distribute it under the stated license; it contains no third-party copyrighted material.\nWallet: FLghuDFMDYYJu2DTEST1g4aHSzRQvcMukMn9MZRcF5zP\nTimestamp: 2026-07-12T00:00:00Z",
   "role": "creator",
-  "signature": "XOONCTgHJNOgtNz778/kv85Y0iBI/LsaW8LGvmmQpeTJPAIumAqFonWqprVNSTNNZW4FLyZRdszZnmJYrw4DDA==",
+  "signature": "tPupFolp9G7fq4zXlelT5sGxS+2UEn08Na/zrW3HxVFQW0Jb/RAdhSqIgyelYEUAAbAxBfa0kLcZpyvS+6HdDw==",
   "signedAt": "2026-07-12T00:00:00Z",
-  "wallet": "Dos7vSEN2rFFsinucJsaLyJ8B2EhkkcyrM6zu73rjcHa"
+  "wallet": "FLghuDFMDYYJu2DTEST1g4aHSzRQvcMukMn9MZRcF5zP"
 }

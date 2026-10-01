@@ -2,13 +2,13 @@
   "keys": [
     {
       "keyId": "plemu-manifest-dev-a",
-      "publicKey": "1bc81e91d8b1cbb13472d9461c227d01287abdbaf642fa2d0471316981346b9c",
+      "publicKey": "a8b41d63d5d344c456c0ac11dec893a716ff1d1b35fb9d1fbdc062b4494ad377",
       "status": "active",
       "validFrom": "2026-07-12T00:00:00Z"
     },
     {
       "keyId": "plemu-manifest-dev-b",
-      "publicKey": "b3a544ba95bc44519de7782b6bd0d712808a602bccd3ef016dbb896960cce1f7",
+      "publicKey": "0871820fcccb8f725e6037596abf25a3308cb74c88945e41ddd24e8f61de21de",
       "status": "next"
     },
     {

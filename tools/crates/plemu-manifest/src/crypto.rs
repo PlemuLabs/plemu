@@ -68,9 +68,9 @@ pub fn verifying_key_to_hex(key: &VerifyingKey) -> String {
 mod tests {
     use super::*;
 
-    const DEV_A_PUB_HEX: &str = "1bc81e91d8b1cbb13472d9461c227d01287abdbaf642fa2d0471316981346b9c";
+    const DEV_A_PUB_HEX: &str = "a8b41d63d5d344c456c0ac11dec893a716ff1d1b35fb9d1fbdc062b4494ad377";
     const DEV_A_SIG_B64: &str =
-        "vlsjOsqeyT8/x6un8G/18xN0Uo58J2qvn5s67eBBn71sTwKifhv4qfxpy89Kh19tx8SupGvFcy51w/w5JNLJCA==";
+        "2yVE0kqkLSL6E+vXnSkHx7uJX0EHZriS9eICu/86MlWKHsmASuoNp/TKt+odXoGt0OneKlLIspAgLdIenJ+4BQ==";
 
     #[test]
     fn verifies_sample_fixture_over_raw_bytes() {

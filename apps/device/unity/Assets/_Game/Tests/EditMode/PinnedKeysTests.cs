@@ -27,7 +27,7 @@ namespace Plemu.Tests
             Assert.That(keyA.Status, Is.EqualTo("active"));
             Assert.That(keyA.IsAcceptable, Is.True);
             Assert.That(keyA.PublicKey,
-                Is.EqualTo("1bc81e91d8b1cbb13472d9461c227d01287abdbaf642fa2d0471316981346b9c"));
+                Is.EqualTo("a8b41d63d5d344c456c0ac11dec893a716ff1d1b35fb9d1fbdc062b4494ad377"));
         }
 
         [Test]
@@ -41,7 +41,7 @@ namespace Plemu.Tests
             Assert.That(keyB.Status, Is.EqualTo("next"));
             Assert.That(keyB.IsAcceptable, Is.True);
             Assert.That(keyB.PublicKey,
-                Is.EqualTo("b3a544ba95bc44519de7782b6bd0d712808a602bccd3ef016dbb896960cce1f7"));
+                Is.EqualTo("0871820fcccb8f725e6037596abf25a3308cb74c88945e41ddd24e8f61de21de"));
         }
 
         [Test]

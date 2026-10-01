@@ -104,7 +104,7 @@ mod tests {
         assert_eq!(dev_a.status, KeyStatus::Active);
         assert_eq!(
             dev_a.public_key,
-            "1bc81e91d8b1cbb13472d9461c227d01287abdbaf642fa2d0471316981346b9c"
+            "a8b41d63d5d344c456c0ac11dec893a716ff1d1b35fb9d1fbdc062b4494ad377"
         );
 
         let dev_b = registry

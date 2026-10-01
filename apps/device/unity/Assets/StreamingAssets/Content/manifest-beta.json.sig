@@ -1,6 +1,6 @@
 {
   "keyId": "plemu-manifest-dev-a",
   "alg": "ed25519",
-  "signature": "7+Ohd25/eFH8RUZQI4oAZaUnHdQQ8d+MYhXM+7rXcD2fqZP0Et5CjxP2SgJuVUiVo8boaToQyNtXOcFipp8vAQ==",
-  "signedAt": "2026-09-28T18:20:26Z"
+  "signature": "jJV5VGIo/6OWJWwFM8zfU5+ELBtvNmz4q69OnHGlVeUQtAZxFeifpSu25V+/GE+A+Wamxj3OO56laLzbNM/BCQ==",
+  "signedAt": "2026-10-01T03:09:20Z"
 }
