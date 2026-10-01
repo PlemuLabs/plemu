@@ -224,10 +224,10 @@ Frozen on Contracts Day, each shipping a contract document **and a working mock*
 | `tools/` | `plemu-*` Rust workspace: manifest build/sign/verify, DAT screening, core audit | Built |
 | `registry/` | Content registry — per-title metadata and creator attestations | Built |
 | `cores/` | Core allowlist, licence lock, Android build glue | Partial |
-| `.github/` | CI, nightly enforcement, PR screening, emergency revoke | Needs repair |
+| `.github/` | CI, nightly enforcement, PR screening, R2 publish, CDN purge | Operational |
 | `contracts/` | The frozen interface seams + cross-language fixtures | Planned |
-| `programs/` | Anchor suite: seats, market, splits, quests | Planned |
-| `services/` | Cloudflare Worker seat gate, Supabase schema | Planned |
+| `programs/` | Anchor suite: seats, market, splits, quests (SPL Token deployed) | Active (Token Mint Live) |
+| `services/` | Cloudflare Worker seat gate, Supabase moderation & DMCA RLS | Built |
 | `portal/` | Next.js creator portal — upload, packs, seats | Planned |
 
 Licensing: `apps/device/` GPL-3.0 (links GPL cores) · `tools/` and `cores/` Apache-2.0 ·

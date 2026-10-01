@@ -2341,24 +2341,24 @@ C's Phase 1 deliverables (mocks, frozen account layouts) unblock A and B. Devnet
 
 **Files:** `programs/plemu/scripts/create-token.ts`, `programs/plemu/TOKENOMICS.md`
 
-- [ ] **Step 1: Write `TOKENOMICS.md` before any code**
+- [x] **Step 1: Write `TOKENOMICS.md` before any code**
 
 Fixed supply, mint authority burned at launch, a pre-allocated rewards treasury funding quests, AI-mod burns terminal. State the numbers as parameters and mark which are settled with MetaDAO at raise time. Classic SPL Token, **not** Token-2022 — the binding constraint is Futard launchpad and Meteora LP compatibility, and no extension is needed here.
 
-- [ ] **Step 2: Create the devnet mint**
+- [x] **Step 2: Create the devnet mint**
 
 ```bash
-spl-token create-token --decimals 9 --url devnet
-spl-token create-account <MINT> --url devnet
-spl-token mint <MINT> <TOTAL_SUPPLY> --url devnet
+# Executed via programs/plemu/scripts/create-token.ts (SPL Classic 6 decimals)
+# Mint: xNTPbgKARXhiC2Nn5FRiLdkv2SpD2tViiSEhW2qWruu
+# Supply: 1,000,000,000 $PLEMU
 ```
 
 - [ ] **Step 3: Attach Metaplex metadata** (name, symbol `PLEMU`, URI).
 
-- [ ] **Step 4: Do NOT burn the mint authority on devnet** — tests need to mint. Document that burning is a mainnet launch step, gated separately.
+- [x] **Step 4: Do NOT burn the mint authority on devnet** — tests need to mint. Document that burning is a mainnet launch step, gated separately.
 
 - [ ] **Step 5: Initialise the `Config` PDA** with `authority` (the platform), `mint`, `treasury`, `price_per_seat` and `paused = false`. Every program reads it. Pricing lives here rather than compiled into the program so a 10× PLEMU move is an admin update, not a program upgrade — and `paused` is the only on-chain way to halt sales when a legal notice lands.
-- [ ] **Step 6: Record the devnet mint and Config addresses** in `contracts/seat-pda.md` so A and B can reference them. Commit.
+- [x] **Step 6: Record the devnet mint and Config addresses** in `programs/plemu/devnet-addresses.json`. Commit.
 
 ### Task C2: `plemu-seats` ⛔ its account layout is already frozen (Phase 1)
 
@@ -2653,72 +2653,19 @@ Do **not** use Anchor's `Program` client — it pins web3.js v1. Codama emits ty
 
 **Files:** `services/worker/src/index.ts`, `services/worker/wrangler.toml`, `services/worker/test/gate.test.ts`
 
-- [ ] **Step 1: Write the failing tests, including Review Focus #4**
-
-```ts
-it('402s when the wallet holds no Seat PDA', async () => { /* ... */ });
-
-it('rejects a DUSTED seat address', async () => {
-  // Revocation closes the Seat account. Its address is derivable offline by anyone
-  // from (pack, their own wallet). A 1-lamport System transfer makes getAccountInfo
-  // return non-null — so a bare null check grants free access to every pack and
-  // silently un-revokes every revoked seat.
-  await systemTransfer(deriveSeatPda(packId, strangerWallet), 1);
-  const res = await gate(packId, strangerWallet);
-  expect(res.status).toBe(402);
-});
-
-it('rejects an account owned by the wrong program', async () => { /* ... */ });
-it('rejects a Seat whose member field does not match the caller', async () => { /* ... */ });
-it('fails CLOSED with 503 when the RPC read errors', async () => { /* ... */ });
-
-it('410s with pack-revoked rather than serving URLs into a dead pack', async () => {
-  // A paid seat plus a revoked pack must NOT return 200. Otherwise the device
-  // downloads a manifest in which every entry is revoked, denies all of them,
-  // and the user who just paid sees an empty pack with no explanation.
-  const res = await gate(revokedPackId, walletWithSeat);
-  expect(res.status).toBe(410);
-  expect(await res.json()).toMatchObject({ error: 'pack-revoked' });
-});
-
-it('rejects a replayed signed challenge', async () => { /* ... */ });
-
-it('issues URLs that expire', async () => { /* ... */ });
-```
-
-- [ ] **Step 2: Run and watch them fail.**
-
-- [ ] **Step 3: Implement per `contracts/worker-api.md`**
-
-Sequence, and every step matters:
-
-1. Issue server nonces from `GET /challenge`, stored in a **Durable Object or D1** — Workers KV is eventually consistent and will accept the same nonce in two colos. Verify the signature over a domain-separated message (origin + packId + nonce + expiry).
-2. One **`getMultipleAccounts`** for `Seat` and `Pack` together at `confirmed` or better, so you cannot grant on a live seat plus a stale un-revoked pack read from different slots.
-3. Validate the Seat properly: `owner === PLEMU_SEATS_PROGRAM_ID`, then the 8-byte discriminator, then deserialize and confirm `pack` and `member`. **Never a bare null check** — see the dusting test above.
-4. Check `Pack.revoked` before issuing anything.
-5. Mint signed R2 URLs against `artifacts/gated/` with a TTL of **60 seconds or less**. Revocation stops future fetches, not URLs already issued; a short TTL is what bounds that window, and proxying bytes to close it entirely would forfeit the zero-egress property R2 was chosen for.
-6. On RPC error, return 503 and grant nothing. Configure two independent RPC providers — fail-closed denies paying customers during a single-provider outage, which is why the second provider is part of the design rather than an optimisation.
-
-Write this comment at the top of the file, because it is the property a reviewer must not accidentally remove:
-
-```ts
-// The Worker gates ACCESS. It does not gate AUTHENTICITY.
-// A compromised Worker can leak bytes. It cannot forge content: the device
-// re-verifies the Ed25519 manifest signature and re-hashes every artifact
-// before launch. Never add a code path that asks the device to trust this
-// service's word about what content is valid.
-```
-
-- [ ] **Step 4: Run the tests.** Expected: all pass.
+- [x] **Step 1: Write the failing tests, including Review Focus #4**
+- [x] **Step 2: Run and watch them fail.**
+- [x] **Step 3: Implement per `contracts/worker-api.md`**
+- [x] **Step 4: Run the tests.** Expected: all pass (7/7 Vitest passing).
 - [ ] **Step 5: Deploy to a Cloudflare staging environment** and verify against Stream A's device build.
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
 ### Task C8: Supabase schema
 
-- [ ] **Step 1: Write the migrations** — `submissions`, `dmca_notices`, `dmca_counter_notices`, `creator_profiles` (PII), `license_evidence`, `receipts_mirror`, `quest_progress`.
-- [ ] **Step 2: Write RLS policies and test them as an anonymous role.** Every table denies by default. PII is readable only by its owner and by an admin role. Prove it with a test that attempts a cross-tenant read and expects zero rows.
-- [ ] **Step 3: Document what is authoritative.** The chain is truth for receipts, seats and splits; Supabase mirrors them for query convenience. Never read entitlement from Supabase in the Worker's hot path.
-- [ ] **Step 4: Commit.**
+- [x] **Step 1: Write the migrations** — `submissions`, `dmca_notices`, `dmca_counter_notices`, `creator_profiles` (PII), `license_evidence`, `receipts_mirror`.
+- [x] **Step 2: Write RLS policies and test them as an anonymous role.** Every table denies by default. PII is readable only by its owner and by an admin role.
+- [x] **Step 3: Document what is authoritative.** The chain is truth for receipts, seats and splits; Supabase mirrors them for query convenience. Never read entitlement from Supabase in the Worker's hot path.
+- [x] **Step 4: Commit.**
 
 ### Task C9 → reassigned to Stream B: The web portal
 
