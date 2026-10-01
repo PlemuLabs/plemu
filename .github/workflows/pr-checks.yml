@@ -109,6 +109,10 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           OVERALL_EXIT="${{ steps.screen.outputs.overall_exit }}"
 
+          gh label create "screen:pass" --color "0E8A16" --description "Registry screening passed" --force --repo "${{ github.repository }}"
+          gh label create "screen:review" --color "FBCA04" --description "Registry screening needs review" --force --repo "${{ github.repository }}"
+          gh label create "screen:reject" --color "B60205" --description "Registry screening rejected the entry" --force --repo "${{ github.repository }}"
+
           # Remove any existing screen labels before applying the new one.
           for LABEL in screen:pass screen:review screen:reject; do
             gh api \
