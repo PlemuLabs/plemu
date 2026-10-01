@@ -507,22 +507,17 @@ New and modified trees, with ownership. **Only the owning stream writes to its t
 
 ```
 plemu/
-├── PLAN.md                                   this document
+├── docs/
+│   ├── superpowers/plans/platform-expansion.md    this document
+│   ├── specs/                         [B]    SPEC.md stays FROZEN — do not edit
+│   │   ├── SPEC.md                           (file untouched; superseded prose in ERRATA)
+│   │   ├── SPEC-LOCAL.md             [B2]   new
+│   │   ├── SPEC-PACK.md              [B2]   new
+│   │   ├── SPEC-V2-DELTA.md          [B2b]  the global revocation list amendment
+│   │   ├── SPEC-ERRATA.md            [B1]   where v1 prose is stale or superseded
+│   │   └── ATTESTATION-V2.md         [B3]   new
+│   └── vision-pt.md                          Portuguese product vision & roadmap
 ├── contracts/                     [Phase 1]  the three seams + frozen fixtures
-│   ├── pack-manifest.md
-│   ├── attestation-v2.md
-│   ├── local-lane-invariant.md
-│   ├── wallet-interface.md
-│   ├── worker-api.md
-│   ├── seat-pda.md
-│   └── fixtures/
-├── spec/                              [B]    SPEC.md stays FROZEN — do not edit
-│   ├── SPEC.md                               (file untouched; superseded prose in ERRATA)
-│   ├── SPEC-LOCAL.md                  [B2]   new
-│   ├── SPEC-PACK.md                   [B2]   new
-│   ├── SPEC-V2-DELTA.md               [B2b]  the global revocation list amendment
-│   ├── SPEC-ERRATA.md                 [B1]   where v1 prose is stale or superseded
-│   └── ATTESTATION-V2.md              [B3]   new
 ├── tools/                             [B]    Rust workspace
 │   └── crates/
 │       ├── plemu-schemas/             [B4]   + PackAttestation, + AttestationV2

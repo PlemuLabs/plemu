@@ -194,7 +194,12 @@ pub fn metadata_to_entry(
 /// `revoked: true` — so the device can deny it and sweep it. A malformed
 /// `revocation.json` is a hard error (fail closed): a broken revocation must
 /// never silently produce a live entry.
-pub fn collect_entries(registry: &Path, base_url: &str, added_at: &str) -> Result<Vec<Entry>> {
+pub fn collect_entries(
+    registry: &Path,
+    base_url: &str,
+    added_at: &str,
+    allow_empty: bool,
+) -> Result<Vec<Entry>> {
     let mut entries = Vec::new();
 
     for system_path in read_dir_sorted(registry)? {
@@ -223,12 +228,88 @@ pub fn collect_entries(registry: &Path, base_url: &str, added_at: &str) -> Resul
             let meta: RegistryMetadata = serde_json::from_slice(&meta_bytes)?;
             validate_metadata(&meta, &slug)?;
             let revocation = read_revocation(&slug_path, &meta.id)?;
-            entries.push(metadata_to_entry(meta, base_url, added_at, revocation));
+            let entry_added_at =
+                git_first_commit_date(&slug_path).unwrap_or_else(|| added_at.to_string());
+            entries.push(metadata_to_entry(
+                meta,
+                base_url,
+                &entry_added_at,
+                revocation,
+            ));
         }
+    }
+
+    if entries.is_empty() && !allow_empty {
+        return Err(ManifestError::Validation(format!(
+            "no entries found in registry at {:?}; empty manifest is forbidden without --allow-empty",
+            registry
+        )));
     }
 
     entries.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(entries)
+}
+
+/// Query git for the first commit timestamp of the given directory.
+/// Format returned is ISO 8601 UTC timestamp e.g. "2026-07-12T00:00:00Z".
+pub fn git_first_commit_date(entry_dir: &Path) -> Option<String> {
+    let output = std::process::Command::new("git")
+        .current_dir(entry_dir)
+        .args([
+            "log",
+            "--diff-filter=A",
+            "--format=%aI",
+            "-1",
+            "--",
+            "metadata.json",
+        ])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    let trimmed = stdout.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(trimmed) {
+        Some(format_utc(dt.with_timezone(&Utc)))
+    } else {
+        None
+    }
+}
+
+/// Build a complete, validated manifest from a registry directory.
+///
+/// If `tier` is `None` and `registry_root` contains tiered subdirectories (`beta` or `main`),
+/// this fails closed to prevent emitting an empty manifest.
+pub fn build_manifest(
+    registry_root: &Path,
+    tier: Option<&str>,
+    base_url: &str,
+    signer_key_id: &str,
+    previous: Option<&Manifest>,
+    now: Option<DateTime<Utc>>,
+    allow_empty: bool,
+) -> Result<Manifest> {
+    if tier.is_none()
+        && (registry_root.join("beta").is_dir() || registry_root.join("main").is_dir())
+    {
+        return Err(ManifestError::Validation(format!(
+            "registry root {:?} contains tiered subdirectories (beta/main) but no --tier was specified; refusing to emit tierless manifest",
+            registry_root
+        )));
+    }
+
+    let generated_at = now.unwrap_or_else(Utc::now);
+    let added_at = format_utc(generated_at);
+    let sequence = next_sequence(previous)?;
+    let entries = collect_entries(registry_root, base_url, &added_at, allow_empty)?;
+    assemble_manifest(entries, generated_at, signer_key_id, sequence)
 }
 
 /// Read a directory's children as sorted paths.

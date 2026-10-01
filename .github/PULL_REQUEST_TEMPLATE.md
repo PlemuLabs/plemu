@@ -16,9 +16,9 @@ Incomplete submissions will be returned without curator review.
 
 ## Files
 
-- [ ] `registry/<system>/<slug>/metadata.json` — present and valid JSON
-- [ ] `registry/<system>/<slug>/attestation.json` — present and valid JSON
-- [ ] `registry/<system>/<slug>/license-evidence/evidence.md` — present, explains the license claim
+- [ ] `registry/<tier>/<system>/<slug>/metadata.json` — present and valid JSON (tier: `beta` or `main`)
+- [ ] `registry/<tier>/<system>/<slug>/attestation.json` — present and valid JSON
+- [ ] `registry/<tier>/<system>/<slug>/license-evidence/evidence.md` — present, explains the license claim
 
 ## Metadata
 
