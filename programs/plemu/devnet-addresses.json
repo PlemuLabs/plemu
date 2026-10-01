@@ -1,0 +1,10 @@
+{
+  "network": "devnet",
+  "plemuMint": "xNTPbgKARXhiC2Nn5FRiLdkv2SpD2tViiSEhW2qWruu",
+  "plemuDeployerAta": "4PEcHxY379hy7BzJRvdqcKgFgXBf1FuPDBS47bm81JBL",
+  "deployerWallet": "FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm",
+  "decimals": 6,
+  "initialSupply": "1000000000",
+  "mintAuthority": "FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm",
+  "createdAt": "2026-10-01T03:12:55.728Z"
+}

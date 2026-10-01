@@ -10,7 +10,23 @@
       "keyId": "plemu-manifest-dev-b",
       "publicKey": "b3a544ba95bc44519de7782b6bd0d712808a602bccd3ef016dbb896960cce1f7",
       "status": "next"
+    },
+    {
+      "keyId": "plemu-manifest-prod-a",
+      "publicKey": "b5dfdd5351083c6e8e535aba3b50d7ab928eadc310caf4e7ee649ef0f4f3454a",
+      "status": "active",
+      "validFrom": "2026-09-30T00:00:00Z"
+    },
+    {
+      "keyId": "plemu-manifest-prod-b",
+      "publicKey": "536d8a0f159ed921c4f0e843f06d3e4fff73fdea78224f3f685ce953277a460c",
+      "status": "next"
+    },
+    {
+      "keyId": "plemu-emergency-1",
+      "publicKey": "e7cd7046da18591d08cb72ca5d582d3cbaf3966255a5cab3347aaacb29858685",
+      "status": "emergency"
     }
   ],
-  "_warning": "DEV KEYS FOR TESTS ONLY. Production active/next keys live in CI environment secrets or KMS; the emergency key is generated offline and is never committed anywhere."
+  "_warning": "OFFICIAL KEY REGISTRY. Production active/next keys live in CI environment secrets or KMS; the emergency key is stored offline and is never committed anywhere."
 }

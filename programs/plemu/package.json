@@ -1,0 +1,21 @@
+{
+  "name": "plemu-programs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plemu Solana on-chain tooling, token creation, and devnet deployment scripts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "create-token": "ts-node scripts/create-token.ts",
+    "generate-deployer": "ts-node scripts/generate-deployer.ts"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.8",
+    "@solana/web3.js": "^1.95.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

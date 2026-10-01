@@ -385,23 +385,56 @@ jobs:
             --sig manifest-main.json.sig \
             --keys tools/keys/manifest-signers.json
 
-      - name: Publish (TODO — no R2 / release infra yet)
+      - name: Publish to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
         run: |
           set -euo pipefail
-          echo "::warning::Publish steps are SCAFFOLD. TODO(infra): none of the targets below exist yet."
-          # TODO(infra): R2 upload via rclone S3 API:
-          #   rclone copyto manifest-beta.json r2:plemu-manifests/manifest-beta.json
-          #   rclone copyto manifest-beta.json.sig r2:plemu-manifests/manifest-beta.json.sig
-          #   rclone copyto manifest-main.json r2:plemu-manifests/manifest-main.json
-          #   rclone copyto manifest-main.json.sig r2:plemu-manifests/manifest-main.json.sig
-          # TODO(infra): single-URL cache purge (Cloudflare) so devices see the new manifests:
-          #   curl -X POST "https://api.cloudflare.com/.../purge_cache" -d '{"files":["https://cdn.plemu.xyz/manifest-beta.json","https://cdn.plemu.xyz/manifest-main.json"]}'
-          # TODO(infra): immutable by-date copy for audit + rollback:
-          #   rclone copyto manifest-beta.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest-beta.json
-          #   rclone copyto manifest-main.json r2:plemu-manifests/by-date/$(date -u +%Y-%m-%d)/manifest-main.json
-          # TODO(infra): GitHub release attaching manifest + compliance report + SBOMs:
-          #   gh release create nightly-$(date -u +%Y-%m-%d) manifest-beta.json manifest-beta.json.sig manifest-main.json manifest-main.json.sig compliance-report.json sbom-*.json
-          echo "SCAFFOLD publish complete (nothing was actually uploaded)."
+          echo "==> Publishing manifests to R2"
+          aws s3 cp manifest-beta.json s3://plemu-content/manifests/store/manifest-beta.json --endpoint-url "$R2_ENDPOINT" --content-type application/json
+          aws s3 cp manifest-beta.json.sig s3://plemu-content/manifests/store/manifest-beta.json.sig --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+          
+          # Also publish at root of bucket for direct cdn.plemu.xyz/manifest-beta.json access
+          aws s3 cp manifest-beta.json s3://plemu-content/manifest-beta.json --endpoint-url "$R2_ENDPOINT" --content-type application/json
+          aws s3 cp manifest-beta.json.sig s3://plemu-content/manifest-beta.json.sig --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+
+          if [ -f "manifest-main.json" ]; then
+            aws s3 cp manifest-main.json s3://plemu-content/manifests/store/manifest-main.json --endpoint-url "$R2_ENDPOINT" --content-type application/json
+            aws s3 cp manifest-main.json.sig s3://plemu-content/manifests/store/manifest-main.json.sig --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+            aws s3 cp manifest-main.json s3://plemu-content/manifest-main.json --endpoint-url "$R2_ENDPOINT" --content-type application/json
+            aws s3 cp manifest-main.json.sig s3://plemu-content/manifest-main.json.sig --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+          fi
+
+          # Archive historical daily snapshot
+          DATE_STR=$(date -u +%Y-%m-%d)
+          aws s3 cp manifest-beta.json "s3://plemu-content/by-date/${DATE_STR}/manifest-beta.json" --endpoint-url "$R2_ENDPOINT"
+
+          # Sync any public artifact files if present
+          if [ -d "registry/beta" ]; then
+            for art in registry/beta/*/*/artifact/*; do
+              if [ -f "$art" ]; then
+                SHA=$(sha256sum "$art" | awk '{print $1}')
+                echo "==> Syncing artifact $SHA"
+                aws s3 cp "$art" "s3://plemu-content/artifacts/public/${SHA}" --endpoint-url "$R2_ENDPOINT" --cache-control "public, max-age=31536000, immutable"
+              fi
+            done
+          fi
+
+      - name: Purge Cloudflare CDN Cache
+        if: success()
+        env:
+          CF_TOKEN: ${{ secrets.CF_PURGE_API_TOKEN }}
+          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+          echo "==> Purging manifest URLs from Cloudflare edge cache"
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"files":["https://cdn.plemu.xyz/manifest-beta.json","https://cdn.plemu.xyz/manifest-beta.json.sig","https://cdn.plemu.xyz/manifests/store/manifest-beta.json","https://cdn.plemu.xyz/manifests/store/manifest-beta.json.sig"]}' | jq .
 
       - name: Upload signed manifest artifact
         if: always()
