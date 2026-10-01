@@ -65,8 +65,6 @@ jobs:
   revoke:
     name: Revoke or reinstate entries and republish
     runs-on: ubuntu-latest
-    # TODO(infra): the same publish environment/secret as the nightly.
-    environment: manifest-publish
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,11 +151,11 @@ jobs:
         run: |
           set -euo pipefail
           # TODO(infra): --previous last-manifest.json from R2 for sequence continuity.
-          cargo run -p plemu-manifest -- build \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- build \
             --registry registry \
             --tier "$TIER" \
             --base-url https://cdn.plemu.xyz \
-            --signer-key-id plemu-manifest-dev-a \
+            --signer-key-id plemu-manifest-prod-a \
             --out "manifest-${TIER}.json"
 
           # Assert that requested entries materialized with the expected revocation status
@@ -202,10 +200,10 @@ jobs:
             echo "::error::PLEMU_MANIFEST_KEY not set (TODO(infra): environment secret). Cannot sign — failing closed."
             exit 1
           fi
-          cargo run -p plemu-manifest -- sign \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- sign \
             --manifest "manifest-${TIER}.json" \
             --key-env PLEMU_MANIFEST_KEY \
-            --key-id plemu-manifest-dev-a \
+            --key-id plemu-manifest-prod-a \
             --keys tools/keys/manifest-signers.json \
             --out "manifest-${TIER}.json.sig"
 
@@ -214,7 +212,7 @@ jobs:
           TIER: ${{ inputs.tier }}
         run: |
           set -euo pipefail
-          cargo run -p plemu-manifest -- verify \
+          cargo run --manifest-path tools/Cargo.toml -p plemu-manifest -- verify \
             --manifest "manifest-${TIER}.json" \
             --sig "manifest-${TIER}.json.sig" \
             --keys tools/keys/manifest-signers.json
@@ -245,11 +243,15 @@ jobs:
           ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           set -euo pipefail
-          echo "==> Purging emergency revoked manifest from Cloudflare edge cache"
-          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${CF_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data "{\"files\":[\"https://cdn.plemu.xyz/manifest-${TIER}.json\",\"https://cdn.plemu.xyz/manifest-${TIER}.json.sig\",\"https://cdn.plemu.xyz/manifests/store/manifest-${TIER}.json\",\"https://cdn.plemu.xyz/manifests/store/manifest-${TIER}.json.sig\"]}" | jq .
+          if [ -n "${ZONE_ID:-}" ] && [ -n "${CF_TOKEN:-}" ]; then
+            echo "==> Purging emergency revoked manifest from Cloudflare edge cache"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+              -H "Authorization: Bearer ${CF_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"files\":[\"https://cdn.plemu.xyz/manifest-${TIER}.json\",\"https://cdn.plemu.xyz/manifest-${TIER}.json.sig\",\"https://cdn.plemu.xyz/manifests/store/manifest-${TIER}.json\",\"https://cdn.plemu.xyz/manifests/store/manifest-${TIER}.json.sig\"]}" | jq .
+          else
+            echo "==> Notice: ZONE_ID or CF_TOKEN not configured (custom domain not yet attached). Skipping CDN edge cache purge."
+          fi
 
       - name: Upload manifest artifact
         if: always()
