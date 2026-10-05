@@ -69,7 +69,7 @@ say "creator wallet  ${WALLET}"
 # --- 3. global replace across every text file -------------------------------
 # A sweep, not a file list: the old key turns up in Rust test assertions, C#
 # constants, JSON registries, prose and fixtures, and enumerating them by hand is
-# how one gets missed. spec/SPEC.md is EXCLUDED — it is frozen and never edited;
+# how one gets missed. docs/specs/SPEC.md is EXCLUDED — it is frozen and never edited;
 # the stale value there is recorded in SPEC-ERRATA.md below.
 say "replacing old key material across the tree"
 python3 "${HERE}/rotate_replace.py" "${ROOT}" "${OLD_A}" "${PUB_A}" "${OLD_B}" "${PUB_B}" "${OLD_W}" "${WALLET}"
@@ -94,7 +94,7 @@ cat > "${TOOLS}/keys/manifest-signers.json" << JSONEOF
 }
 JSONEOF
 
-ERRATA="${ROOT}/spec/SPEC-ERRATA.md"
+ERRATA="${ROOT}/docs/specs/SPEC-ERRATA.md"
 if [ ! -f "${ERRATA}" ]; then
   printf '# SPEC v1 errata\n\nWhere `SPEC.md` prose is stale or superseded. **`SPEC.md` itself is never edited.**\n' > "${ERRATA}"
 fi

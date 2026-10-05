@@ -558,8 +558,13 @@ fn build_honors_revocation_sidecar() {
         Some(r#"{ "reason": "dmca", "revokedAt": "2026-07-13T09:30:00Z" }"#),
     );
 
-    let entries = collect_entries(registry, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z")
-        .expect("collect_entries");
+    let entries = collect_entries(
+        registry,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect("collect_entries");
     let manifest = assemble_manifest(
         entries,
         ts("2026-07-13T00:00:00Z"),
@@ -612,8 +617,13 @@ fn build_fails_closed_on_malformed_revocation() {
         sha,
         Some(r#"{ "reason": "not-a-real-reason", "revokedAt": "2026-07-13T09:30:00Z" }"#),
     );
-    let err = collect_entries(registry, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z")
-        .expect_err("malformed revocation reason must fail the build");
+    let err = collect_entries(
+        registry,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect_err("malformed revocation reason must fail the build");
     let msg = format!("{err}");
     assert!(
         msg.contains("bad-reason") && msg.contains("revocation.json"),
@@ -631,8 +641,13 @@ fn build_fails_closed_on_malformed_revocation() {
         sha,
         Some(r#"{ "reason": "malware", "revokedAt": "yesterday" }"#),
     );
-    let err2 = collect_entries(registry2, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z")
-        .expect_err("non-ISO revokedAt must fail the build");
+    let err2 = collect_entries(
+        registry2,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect_err("non-ISO revokedAt must fail the build");
     assert!(
         format!("{err2}").contains("revokedAt"),
         "error must name the bad field: {err2}"
@@ -673,15 +688,25 @@ fn tier_beta_builds_from_beta_subdir() {
     );
 
     // Build from the beta subdir — must contain the beta entry.
-    let beta_entries = collect_entries(&beta_dir, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z")
-        .expect("collect beta entries");
+    let beta_entries = collect_entries(
+        &beta_dir,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        false,
+    )
+    .expect("collect beta entries");
     assert_eq!(beta_entries.len(), 1, "beta must have exactly 1 entry");
     assert_eq!(beta_entries[0].id, "wasm4/hello-plemu");
     assert!(!beta_entries[0].revoked, "beta entry must be live");
 
     // Build from the main subdir — must be empty (no entries promoted yet).
-    let main_entries = collect_entries(&main_dir, "https://cdn.plemu.xyz", "2026-07-13T00:00:00Z")
-        .expect("collect main entries (empty is valid)");
+    let main_entries = collect_entries(
+        &main_dir,
+        "https://cdn.plemu.xyz",
+        "2026-07-13T00:00:00Z",
+        true,
+    )
+    .expect("collect main entries (empty is valid)");
     assert_eq!(
         main_entries.len(),
         0,
@@ -706,4 +731,101 @@ fn tier_beta_builds_from_beta_subdir() {
     )
     .expect("assemble main manifest (zero entries allowed)");
     assert_eq!(main_manifest.entries.len(), 0);
+}
+
+#[test]
+fn build_without_tier_on_a_tiered_registry_fails_loudly() {
+    let tmp = tempfile::TempDir::new().unwrap();
+    let root = tmp.path();
+
+    let beta_dir = root.join("beta");
+    std::fs::create_dir_all(&beta_dir).unwrap();
+    write_entry(
+        &beta_dir,
+        plemu_schemas::System::Wasm4,
+        plemu_schemas::CoreId::Wasm4,
+        "hello-plemu",
+        "70b85a30034102176c6c4f450ac3cd38ab526edb6db374fd8d94c9ea768948dd",
+        None,
+    );
+
+    // Building root without tier must fail closed because it detects beta/ subdirectory
+    let err = plemu_manifest::build_manifest(
+        root,
+        None,
+        "https://cdn.plemu.xyz",
+        "plemu-manifest-dev-a",
+        None,
+        None,
+        false,
+    )
+    .unwrap_err();
+
+    assert!(
+        matches!(err, plemu_manifest::ManifestError::Validation(ref m) if m.contains("tiered subdirectories")),
+        "expected error about tiered subdirectories, got: {err:?}"
+    );
+}
+
+#[test]
+fn build_empty_directory_without_allow_empty_fails() {
+    let tmp = tempfile::TempDir::new().unwrap();
+    let empty_dir = tmp.path().join("empty_sys");
+    std::fs::create_dir_all(&empty_dir).unwrap();
+
+    let err = plemu_manifest::build_manifest(
+        &empty_dir,
+        None,
+        "https://cdn.plemu.xyz",
+        "plemu-manifest-dev-a",
+        None,
+        None,
+        false,
+    )
+    .unwrap_err();
+
+    assert!(
+        matches!(err, plemu_manifest::ManifestError::Validation(ref m) if m.contains("no entries found")),
+        "expected error about no entries found, got: {err:?}"
+    );
+
+    // With allow_empty = true, it should succeed with 0 entries
+    let manifest = plemu_manifest::build_manifest(
+        &empty_dir,
+        None,
+        "https://cdn.plemu.xyz",
+        "plemu-manifest-dev-a",
+        None,
+        None,
+        true,
+    )
+    .expect("allow_empty must permit empty manifest");
+
+    assert_eq!(manifest.entries.len(), 0);
+}
+
+#[test]
+fn git_first_commit_date_returns_timestamp_for_existing_git_repo() {
+    let beta_dir = Path::new(REPO_ROOT).join("../../..").join("registry/beta");
+    let sentinel = ts("1999-01-01T00:00:00Z");
+    let manifest = plemu_manifest::build_manifest(
+        &beta_dir,
+        Some("beta"),
+        "https://cdn.plemu.xyz",
+        "plemu-manifest-dev-a",
+        None,
+        Some(sentinel),
+        false,
+    )
+    .expect("build real beta registry");
+
+    let libbet = manifest
+        .entries
+        .iter()
+        .find(|e| e.id == "gb/libbet")
+        .expect("libbet exists");
+    // Libbet was committed to git; its addedAt should be a valid RFC 3339 timestamp
+    assert!(!libbet.added_at.is_empty());
+    assert!(chrono::DateTime::parse_from_rfc3339(&libbet.added_at).is_ok());
+    assert_ne!(libbet.added_at, plemu_manifest::build::format_utc(sentinel));
 }

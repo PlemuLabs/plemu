@@ -12,5 +12,6 @@ pub mod error;
 pub mod sign;
 pub mod verify;
 
+pub use build::{assemble_manifest, build_manifest, collect_entries, git_first_commit_date};
 pub use error::{ManifestError, Result};
 pub use verify::{freshness, verify_manifest, Freshness, Verified};
