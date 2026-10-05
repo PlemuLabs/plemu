@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/Plemu.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Plemu.App/Plemu.App.csproj" />
+    <Project Path="src/Plemu.Runtime/Plemu.Runtime.csproj" />
+    <Project Path="src/Plemu.Solana/Plemu.Solana.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Plemu.Solana.Tests/Plemu.Solana.Tests.csproj" />
+  </Folder>
+</Solution>
