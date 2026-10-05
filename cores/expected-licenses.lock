@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "All commit and licenseSha256 values are TBD — these must be filled in by a human reviewer as part of the initial pin PR. The nightly plemu-core-audit --strict fails on any TBD value by design; unpinned cores do not go to production.",
+  "note": "Commits pinned for sameboy, bsnes, blastem, mgba (A6 targets). Remaining cores TBD until scheduled. licenseSha256 values deferred to Phase M per §2.11 — plemu-core-audit --strict stays red on TBD by design.",
   "cores": [
     {
       "coreId": "fceumm",
@@ -13,7 +13,7 @@
     {
       "coreId": "bsnes",
       "repo": "https://github.com/libretro/bsnes-libretro",
-      "commit": "TBD",
+      "commit": "05439f96121d2b9d7ad7a5fc1f29d7eebdcc8c43",
       "licenseFile": "LICENSE",
       "licenseSha256": "TBD",
       "spdx": "GPL-3.0-only"
@@ -21,7 +21,7 @@
     {
       "coreId": "blastem",
       "repo": "https://github.com/libretro/blastem",
-      "commit": "TBD",
+      "commit": "1e0de94dc7e669c0925a22c0fccf6cdc837af0a0",
       "licenseFile": "LICENSE",
       "licenseSha256": "TBD",
       "spdx": "GPL-3.0-only"
@@ -37,7 +37,7 @@
     {
       "coreId": "sameboy",
       "repo": "https://github.com/LIJI32/SameBoy",
-      "commit": "TBD",
+      "commit": "208ba4afabffab9edde416f2dbb8ae459e34adb8",
       "licenseFile": "LICENSE",
       "licenseSha256": "TBD",
       "spdx": "MIT"
@@ -45,7 +45,7 @@
     {
       "coreId": "mgba",
       "repo": "https://github.com/mgba-emu/mgba",
-      "commit": "TBD",
+      "commit": "c3c8e5e813f245028de118a56734e1dc0f35ce2a",
       "licenseFile": "LICENSE",
       "licenseSha256": "TBD",
       "spdx": "MPL-2.0"

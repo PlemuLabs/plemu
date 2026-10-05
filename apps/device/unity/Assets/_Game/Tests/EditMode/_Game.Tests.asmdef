@@ -3,6 +3,7 @@
     "rootNamespace": "Plemu.Tests",
     "references": [
         "Plemu",
+        "Plemu.Wallet",
         "ChaosNaCl",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

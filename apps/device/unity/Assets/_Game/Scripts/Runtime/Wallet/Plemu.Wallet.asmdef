@@ -1,0 +1,17 @@
+{
+    "name": "Plemu.Wallet",
+    "rootNamespace": "Plemu.Wallet",
+    "references": [
+        "Plemu",
+        "Unity.Nuget.Newtonsoft-Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "All 16 allowlisted cores (SPEC §1.5). commit fields are TBD — pin them as part of the first human-reviewed lock-in PR. See cores/expected-licenses.lock and docs/adding-a-core.md.",
+  "note": "All 16 allowlisted cores (SPEC §1.5). Commits pinned for sameboy, bsnes, blastem, mgba (A6 targets). Remaining cores stay TBD until scheduled. licenseSha256 values deferred to Phase M per §2.11.",
   "cores": [
     {
       "coreId": "fceumm",
@@ -14,7 +14,7 @@
       "coreId": "bsnes",
       "systems": ["snes"],
       "repo": "https://github.com/libretro/bsnes-libretro",
-      "commit": "TBD",
+      "commit": "05439f96121d2b9d7ad7a5fc1f29d7eebdcc8c43",
       "buildHint": "make platform=android-arm64",
       "artifact": "bsnes_libretro_android.so"
     },
@@ -22,8 +22,8 @@
       "coreId": "blastem",
       "systems": ["md"],
       "repo": "https://github.com/libretro/blastem",
-      "commit": "TBD",
-      "buildHint": "TBD-verify",
+      "commit": "1e0de94dc7e669c0925a22c0fccf6cdc837af0a0",
+      "buildHint": "make -f Makefile.libretro platform=android-arm64",
       "artifact": "blastem_libretro_android.so"
     },
     {
@@ -38,7 +38,7 @@
       "coreId": "sameboy",
       "systems": ["gb", "gbc"],
       "repo": "https://github.com/LIJI32/SameBoy",
-      "commit": "TBD",
+      "commit": "208ba4afabffab9edde416f2dbb8ae459e34adb8",
       "buildHint": "make libretro PLATFORM=android ARCH=arm64",
       "artifact": "sameboy_libretro_android.so"
     },
@@ -46,7 +46,7 @@
       "coreId": "mgba",
       "systems": ["gba"],
       "repo": "https://github.com/mgba-emu/mgba",
-      "commit": "TBD",
+      "commit": "c3c8e5e813f245028de118a56734e1dc0f35ce2a",
       "buildHint": "cmake -DLIBRETRO=ON -DANDROID_ABI=arm64-v8a",
       "artifact": "mgba_libretro_android.so"
     },
