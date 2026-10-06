@@ -45,6 +45,8 @@ int rh_video_init(rh_video *v, uint32_t max_w, uint32_t max_h)
         return RH_ERR_IO;
     }
     v->cap = cap;
+    v->max_w = max_w;
+    v->max_h = max_h;
     v->front = 0;
     v->width = 0;
     v->height = 0;
@@ -59,6 +61,8 @@ int rh_video_init(rh_video *v, uint32_t max_w, uint32_t max_h)
         v->buf[0] = NULL;
         v->buf[1] = NULL;
         v->cap = 0;
+        v->max_w = 0;
+        v->max_h = 0;
         return RH_ERR_IO;
     }
     return RH_OK;
@@ -81,6 +85,8 @@ void rh_video_free(rh_video *v)
     v->buf[0] = NULL;
     v->buf[1] = NULL;
     v->cap = 0;
+    v->max_w = 0;
+    v->max_h = 0;
     v->have_frame = false;
 }
 

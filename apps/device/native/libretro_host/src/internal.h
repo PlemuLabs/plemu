@@ -29,6 +29,7 @@ typedef struct {
     size_t cap;      /* bytes allocated per buffer                          */
     int front;       /* index of the last completed frame                  */
     uint32_t width, height, pitch;
+    uint32_t max_w, max_h;
     uint32_t format;   /* RH_FORMAT_* (host enum)                           */
     uint64_t serial;   /* frame counter, bumped each completed frame        */
     bool have_frame;   /* at least one frame produced                       */
