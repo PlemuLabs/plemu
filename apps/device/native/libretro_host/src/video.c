@@ -54,7 +54,11 @@ int rh_video_init(rh_video *v, uint32_t max_w, uint32_t max_h)
     v->have_frame = false;
     v->locked = false;
     if (pthread_mutex_init(&v->mtx, NULL) != 0) {
-        rh_video_free(v);
+        free(v->buf[0]);
+        free(v->buf[1]);
+        v->buf[0] = NULL;
+        v->buf[1] = NULL;
+        v->cap = 0;
         return RH_ERR_IO;
     }
     return RH_OK;
@@ -66,6 +70,10 @@ void rh_video_free(rh_video *v)
         return;
     }
     if (v->buf[0] != NULL || v->buf[1] != NULL) {
+        if (v->locked) {
+            v->locked = false;
+            pthread_mutex_unlock(&v->mtx);
+        }
         pthread_mutex_destroy(&v->mtx);
     }
     free(v->buf[0]);
@@ -99,6 +107,14 @@ void rh_video_refresh_cb(const void *data, unsigned width, unsigned height, size
 
     const uint32_t bpp = rh_bpp_for_format(c->host_format);
     const size_t dst_pitch = (size_t)width * bpp;
+
+    /* Validate frame geometry bounds against allocation and pitch. */
+    if (width > v->max_w || height > v->max_h || pitch < dst_pitch) {
+        rh_log(c, RETRO_LOG_WARN, "video: invalid frame geometry %ux%u (pitch %zu, dst_pitch %zu)",
+               width, height, pitch, dst_pitch);
+        pthread_mutex_unlock(&v->mtx);
+        return;
+    }
 
     /* Clamp row count to our allocation. A misbehaving core reporting geometry
      * larger than max_w/max_h must never overrun the heap — truncate instead. */

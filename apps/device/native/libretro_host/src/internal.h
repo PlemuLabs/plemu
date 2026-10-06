@@ -37,13 +37,14 @@ typedef struct {
 } rh_video;
 
 /* ---- Audio ring (fixed capacity, stereo interleaved s16) ------------------- */
+#include <stdatomic.h>
+
 typedef struct {
     int16_t *data; /* capacity_frames * 2 samples                           */
     uint32_t capacity_frames;
-    uint32_t head; /* next write frame index                                */
-    uint32_t tail; /* next read frame index                                 */
-    uint32_t count;  /* frames currently buffered                           */
-    uint64_t drops;  /* frames dropped due to overrun                       */
+    _Atomic uint32_t head; /* next write frame index (producer writes)      */
+    _Atomic uint32_t tail; /* next read frame index (consumer writes)       */
+    _Atomic uint32_t drops;  /* frames dropped due to overrun               */
 } rh_ring;
 
 /* ---- Minimal core-variable map (SET_VARIABLES / GET_VARIABLE) -------------- */

@@ -46,6 +46,9 @@ namespace Plemu.Content
         }
 
         /// <inheritdoc/>
+        public bool IsBundled => false;
+
+        /// <inheritdoc/>
         public ManifestBundle GetVerifiedManifest()
         {
             if (!File.Exists(_manifestPath) || !File.Exists(_signaturePath))

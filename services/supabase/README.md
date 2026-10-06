@@ -14,21 +14,35 @@ This directory manages the Supabase schema, database migrations, and Row-Level S
    - `creator_profiles` stores contact information required for copyright counter-notices.
    - `dmca_notices` and `dmca_counter_notices` maintain an immutable audit trail of takedown demands.
 
+## Environments
+
+The project maintains isolated environments on Supabase to ensure safe promotion of schema changes and Safe Harbor compliance:
+
+| Environment | Project Ref | API Endpoint | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Production (`prod`)** | `fddgxpzlcimtvrxxccwh` | `https://fddgxpzlcimtvrxxccwh.supabase.co` | Live app, official creator submissions, legal DMCA records |
+| **Homologation (`hml`)** | `casymkeuyyppcxmbqfba` | `https://casymkeuyyppcxmbqfba.supabase.co` | Staging, integration testing, schema verification |
+
 ## Environment Variables
 
 For local development or CI/CD services interacting with Supabase:
 
 | Variable | Description | Location |
 | :--- | :--- | :--- |
-| `SUPABASE_URL` | API endpoint for the Supabase project | Project Settings > API |
+| `SUPABASE_URL` | API endpoint for the target environment | Project Settings > API |
 | `SUPABASE_ANON_KEY` | Public client key (used by frontend apps) | Project Settings > API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret backend service role key (bypasses RLS) | Project Settings > API (Keep Secret!) |
 
 ## Applying Migrations
 
-Migrations can be applied using the Supabase MCP or Supabase CLI:
+Migrations must always be verified in **HML** before being applied to **Production**.
+
+Using the Supabase MCP or Supabase CLI:
 
 ```bash
-# Using Supabase CLI
-supabase db push
+# Push migrations to HML
+npx supabase db push --project-ref casymkeuyyppcxmbqfba
+
+# Push migrations to Production
+npx supabase db push --project-ref fddgxpzlcimtvrxxccwh
 ```

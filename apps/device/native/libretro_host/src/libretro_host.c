@@ -368,6 +368,9 @@ int32_t rh_lock_frame(rh_handle h, rh_frame *out)
         return RH_ERR_NO_GAME;
     }
     rh_video *v = &c->video;
+    if (v->locked) {
+        return RH_ERR_STATE;
+    }
     pthread_mutex_lock(&v->mtx);
     if (!v->have_frame) {
         pthread_mutex_unlock(&v->mtx);
@@ -387,7 +390,7 @@ int32_t rh_lock_frame(rh_handle h, rh_frame *out)
 void rh_unlock_frame(rh_handle h)
 {
     rh_core *c = (rh_core *)h;
-    if (c == NULL || !c->game_loaded) {
+    if (c == NULL) {
         return;
     }
     rh_video *v = &c->video;
@@ -420,7 +423,10 @@ float rh_audio_fill(rh_handle h)
     if (c == NULL || !c->game_loaded || c->audio.capacity_frames == 0) {
         return 0.0f;
     }
-    return (float)c->audio.count / (float)c->audio.capacity_frames;
+    uint32_t head = atomic_load_explicit(&c->audio.head, memory_order_relaxed);
+    uint32_t tail = atomic_load_explicit(&c->audio.tail, memory_order_relaxed);
+    uint32_t count = head - tail;
+    return (float)count / (float)c->audio.capacity_frames;
 }
 
 /* ---- input ----------------------------------------------------------------- */
