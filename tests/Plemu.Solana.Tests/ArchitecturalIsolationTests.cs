@@ -96,4 +96,137 @@ public class ArchitecturalIsolationTests
         Assert.Contains("services.AddSingleton<IWalletService, PlaySolanaWalletService>();", content);
         Assert.Contains("services.AddSingleton<IEntitlementService, SolanaEntitlementService>();", content);
     }
+
+    [Fact]
+    public void DenialReason_Contains_EntitlementMissing()
+    {
+        Assert.True(Enum.IsDefined(typeof(Plemu.Content.DenialReason), Plemu.Content.DenialReason.EntitlementMissing));
+        Assert.Equal("EntitlementMissing", Plemu.Content.DenialReason.EntitlementMissing.ToString());
+    }
+
+    [Fact]
+    public void PlemuRuntimeSourceFiles_DoNotReference_PlemuSolana()
+    {
+        var plemuRoot = FindPlemuRoot();
+        var runtimeSourceDir = Path.Combine(plemuRoot, "src", "Plemu.Runtime");
+
+        var csFiles = Directory.GetFiles(runtimeSourceDir, "*.cs", SearchOption.AllDirectories);
+        foreach (var file in csFiles)
+        {
+            var content = File.ReadAllText(file);
+            Assert.DoesNotContain("using Plemu.Solana;", content, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Plemu.Solana", content, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void PlemuRuntimeAssembly_DoesNotReference_PlemuSolanaAssembly()
+    {
+        var runtimeAssembly = typeof(Plemu.Content.LaunchGate).Assembly;
+        var referencedAssemblies = runtimeAssembly.GetReferencedAssemblies();
+
+        foreach (var assemblyName in referencedAssemblies)
+        {
+            Assert.DoesNotContain("Plemu.Solana", assemblyName.Name, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Solana", assemblyName.Name, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void PlemuCoreAssembly_DoesNotReference_PlemuSolanaAssembly()
+    {
+        var coreAssembly = typeof(Plemu.Core.Abstractions.IWalletService).Assembly;
+        var referencedAssemblies = coreAssembly.GetReferencedAssemblies();
+
+        foreach (var assemblyName in referencedAssemblies)
+        {
+            Assert.DoesNotContain("Plemu.Solana", assemblyName.Name, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Solana", assemblyName.Name, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void PlemuSolanaCsproj_DoesNotReference_PlemuRuntime_Or_PlemuApp()
+    {
+        var plemuRoot = FindPlemuRoot();
+        var solanaCsprojPath = Path.Combine(plemuRoot, "src", "Plemu.Solana", "Plemu.Solana.csproj");
+
+        Assert.True(File.Exists(solanaCsprojPath),
+            $"Plemu.Solana.csproj could not be located at '{solanaCsprojPath}'.");
+
+        var xml = XDocument.Load(solanaCsprojPath);
+        var projectReferences = xml.Descendants("ProjectReference");
+
+        foreach (var pr in projectReferences)
+        {
+            var includeAttr = pr.Attribute("Include")?.Value ?? string.Empty;
+            Assert.DoesNotContain("Plemu.Runtime", includeAttr, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Plemu.App", includeAttr, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void PlemuSolanaAssembly_DoesNotReference_PlemuRuntime_Or_PlemuApp()
+    {
+        var solanaAssembly = typeof(PlaySolanaWalletService).Assembly;
+        var referencedAssemblies = solanaAssembly.GetReferencedAssemblies();
+
+        foreach (var assemblyName in referencedAssemblies)
+        {
+            Assert.DoesNotContain("Plemu.Runtime", assemblyName.Name, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Plemu.App", assemblyName.Name, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void UnityRuntimeContentSourceFiles_DoNotReference_PlemuSolana()
+    {
+        var plemuRoot = FindPlemuRoot();
+        var unityContentDir = Path.Combine(plemuRoot, "apps", "device", "unity", "Assets", "_Game", "Scripts", "Runtime", "Content");
+
+        if (!Directory.Exists(unityContentDir))
+        {
+            return;
+        }
+
+        var csFiles = Directory.GetFiles(unityContentDir, "*.cs", SearchOption.AllDirectories);
+        foreach (var file in csFiles)
+        {
+            var content = File.ReadAllText(file);
+            Assert.DoesNotContain("using Plemu.Solana;", content, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Plemu.Solana", content, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void PlemuCoreAbstractions_Types_DoNotExpose_PlemuSolanaTypes()
+    {
+        var typesToCheck = new[]
+        {
+            typeof(Plemu.Core.Abstractions.IWalletService),
+            typeof(Plemu.Core.Abstractions.IEntitlementService),
+            typeof(Plemu.Core.Abstractions.IEntitlementStore),
+            typeof(Plemu.Core.Models.WalletIdentity),
+            typeof(Plemu.Core.Models.WalletConnectionState)
+        };
+
+        foreach (var type in typesToCheck)
+        {
+            // Check properties
+            foreach (var prop in type.GetProperties())
+            {
+                Assert.DoesNotContain("Plemu.Solana", prop.PropertyType.FullName ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Check methods
+            foreach (var method in type.GetMethods())
+            {
+                Assert.DoesNotContain("Plemu.Solana", method.ReturnType.FullName ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                foreach (var param in method.GetParameters())
+                {
+                    Assert.DoesNotContain("Plemu.Solana", param.ParameterType.FullName ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
+    }
 }

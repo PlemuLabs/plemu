@@ -12,4 +12,12 @@ public class MockEntitlementService : IEntitlementService
 
     public Task<bool> CanAccessPack(WalletIdentity wallet, string packId) =>
         CanAccessPackAsync(wallet, packId, CancellationToken.None);
+
+    public Task<bool> CanAccessEntryAsync(WalletIdentity wallet, string entrySha256, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(!string.IsNullOrWhiteSpace(entrySha256));
+    }
+
+    public Task<bool> CanAccessEntry(WalletIdentity wallet, string entrySha256) =>
+        CanAccessEntryAsync(wallet, entrySha256, CancellationToken.None);
 }
