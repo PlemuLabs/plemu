@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Neon Orbit</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #070b22;
+        color: #edf1ff;
+        font-family: monospace;
+        text-align: center;
+        overflow: hidden;
+      }
+      #game {
+        position: relative;
+        max-width: 720px;
+        margin: auto;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        background: #070b22;
+        touch-action: none;
+      }
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #070b22bb;
+        padding: 25px;
+      }
+      h1 {
+        color: #21eeb8;
+        letter-spacing: 5px;
+        font-size: clamp(23px, 5vw, 38px);
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      button {
+        background: #21eeb8;
+        color: #070b22;
+        border: 2px solid white;
+        padding: 13px 22px;
+        font: bold 16px monospace;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 3px solid #ffbe59;
+        outline-offset: 3px;
+      }
+      #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 15px;
+        pointer-events: none;
+      }
+      #controls button {
+        pointer-events: auto;
+        touch-action: none;
+        background: #101d3bc9;
+        color: #21eeb8;
+        border-color: #21eeb8;
+        width: 65px;
+        height: 44px;
+        padding: 0;
+        font-size: 26px;
+      }
+      #pause {
+        position: absolute;
+        right: 15px;
+        top: 12px;
+        font-size: 12px;
+        padding: 8px;
+        background: #111a35;
+        color: #adb4cd;
+        border: 1px solid #424b74;
+      }
+      #status {
+        position: absolute;
+        left: 15px;
+        top: 15px;
+        color: #21eeb8;
+        font-size: 15px;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game">
+      <canvas
+        id="canvas"
+        width="720"
+        height="440"
+        tabindex="0"
+        aria-label="Área do jogo. Use setas esquerda e direita ou A e D para desviar dos meteoros."
+      ></canvas>
+      <div id="status" aria-live="off">SCORE 0000</div>
+      <button id="pause" aria-label="Pausar jogo">PAUSAR</button>
+      <div id="overlay">
+        <h1>NEON ORBIT</h1>
+        <p id="message">
+          Desvie dos meteoros.<br />Use ← → ou A/D. No celular, use os botões
+          abaixo.
+        </p>
+        <button id="start">COMEÇAR</button>
+      </div>
+      <div id="controls">
+        <button id="left" aria-label="Mover para esquerda">←</button
+        ><button id="right" aria-label="Mover para direita">→</button>
+      </div>
+    </div>
+    <script>
+      "use strict";
+      const canvas = document.getElementById("canvas"),
+        ctx = canvas.getContext("2d"),
+        overlay = document.getElementById("overlay"),
+        message = document.getElementById("message"),
+        start = document.getElementById("start"),
+        pauseButton = document.getElementById("pause"),
+        status = document.getElementById("status");
+      let running = false,
+        paused = false,
+        x = 360,
+        score = 0,
+        rocks = [],
+        spawn = 0,
+        last = 0;
+      const keys = { left: false, right: false };
+      const stars = Array.from({ length: 65 }, () => ({
+        x: Math.random() * 720,
+        y: Math.random() * 440,
+        s: Math.random() > 0.85 ? 3 : 1,
+      }));
+      function reset() {
+        x = 360;
+        score = 0;
+        rocks = [];
+        spawn = 0;
+        keys.left = false;
+        keys.right = false;
+        running = true;
+        paused = false;
+        pauseButton.textContent = "PAUSAR";
+        overlay.classList.add("hidden");
+        canvas.focus();
+      }
+      function end() {
+        running = false;
+        keys.left = false;
+        keys.right = false;
+        message.textContent =
+          "Fim da órbita! Você marcou " + Math.floor(score) + " pontos.";
+        start.textContent = "JOGAR DE NOVO";
+        overlay.classList.remove("hidden");
+        start.focus();
+      }
+      function pause() {
+        if (!running) return;
+        paused = !paused;
+        keys.left = false;
+        keys.right = false;
+        pauseButton.textContent = paused ? "CONTINUAR" : "PAUSAR";
+        if (!paused) canvas.focus();
+      }
+      start.addEventListener("click", reset);
+      pauseButton.addEventListener("click", pause);
+      window.addEventListener("keydown", (e) => {
+        if (
+          [
+            "ArrowLeft",
+            "ArrowRight",
+            " ",
+            "a",
+            "A",
+            "d",
+            "D",
+            "p",
+            "P",
+          ].includes(e.key)
+        )
+          e.preventDefault();
+        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a")
+          keys.left = true;
+        if (e.key === "ArrowRight" || e.key.toLowerCase() === "d")
+          keys.right = true;
+        if ((e.key === "p" || e.key === "P") && !e.repeat) pause();
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a")
+          keys.left = false;
+        if (e.key === "ArrowRight" || e.key.toLowerCase() === "d")
+          keys.right = false;
+      });
+      window.addEventListener("blur", () => {
+        keys.left = false;
+        keys.right = false;
+        if (running && !paused) pause();
+      });
+      for (const name of ["left", "right"]) {
+        const b = document.getElementById(name);
+        b.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          b.setPointerCapture(e.pointerId);
+          keys[name] = true;
+        });
+        for (const event of [
+          "pointerup",
+          "pointercancel",
+          "lostpointercapture",
+        ])
+          b.addEventListener(event, () => (keys[name] = false));
+      }
+      function frame(time) {
+        const dt = Math.min((time - last) / 1000, 0.05);
+        last = time;
+        ctx.fillStyle = "#070b22";
+        ctx.fillRect(0, 0, 720, 440);
+        for (const s of stars) {
+          if (running && !paused) s.y = (s.y + 35 * dt) % 440;
+          ctx.fillStyle = s.s === 3 ? "#a98fe0" : "#455576";
+          ctx.fillRect(s.x, s.y, s.s, s.s);
+        }
+        if (running && !paused) {
+          score += dt * 10;
+          x = Math.max(
+            18,
+            Math.min(
+              702,
+              x + (Number(keys.right) - Number(keys.left)) * 340 * dt,
+            ),
+          );
+          spawn += dt;
+          if (spawn > Math.max(0.2, 0.7 - score / 1400)) {
+            spawn = 0;
+            rocks.push({
+              x: 20 + Math.random() * 680,
+              y: -20,
+              r: 12 + Math.random() * 12,
+            });
+          }
+          for (const r of rocks) {
+            r.y += (110 + score * 0.32) * dt;
+            if (
+              Math.abs(r.x - x) < r.r + 12 &&
+              Math.abs(r.y - 370) < r.r + 12
+            ) {
+              end();
+              break;
+            }
+          }
+          rocks = rocks.filter((r) => r.y < 480);
+          status.textContent =
+            "SCORE " + Math.floor(score).toString().padStart(4, "0");
+        }
+        for (const r of rocks) {
+          ctx.fillStyle = "#ad67f5";
+          ctx.fillRect(r.x - r.r, r.y - r.r, r.r * 2, r.r * 2);
+          ctx.fillStyle = "#683b96";
+          ctx.fillRect(r.x - r.r + 4, r.y - r.r + 4, r.r, 7);
+        }
+        ctx.fillStyle = "#21eeb8";
+        ctx.fillRect(x - 6, 352, 12, 30);
+        ctx.fillRect(x - 16, 365, 32, 13);
+        ctx.fillStyle = "#f3ecff";
+        ctx.fillRect(x - 3, 355, 6, 9);
+        ctx.fillStyle = "#ffbe59";
+        ctx.fillRect(
+          x - 4,
+          384,
+          8,
+          running && !paused ? 8 + Math.random() * 8 : 5,
+        );
+        if (paused) {
+          ctx.fillStyle = "#070b22bb";
+          ctx.fillRect(0, 80, 720, 270);
+          ctx.fillStyle = "#21eeb8";
+          ctx.font = "bold 25px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("PAUSADO", 360, 220);
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

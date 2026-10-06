@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.env*
+!.env.example
+
+# Framework-generated TypeScript references
+next-env.d.ts
