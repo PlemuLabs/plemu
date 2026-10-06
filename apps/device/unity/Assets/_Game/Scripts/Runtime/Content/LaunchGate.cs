@@ -11,8 +11,8 @@ namespace Plemu.Content
     /// </summary>
     /// <remarks>
     /// Synchronous by design for v0; an async wrapper arrives with the download manager. The
-    /// bundled-manifest exemption for Expired starter-pack titles (SPEC §2.3 step 6) is a later
-    /// task — for now Expired always denies.
+    /// bundled-manifest exemption for Expired starter-pack titles (SPEC §2.3 step 6) is supported
+    /// via <see cref="IManifestSource.IsBundled"/>.
     /// </remarks>
     public static class LaunchGate
     {
@@ -61,9 +61,13 @@ namespace Plemu.Content
                     $"Manifest failed re-verification: {verification.Failure}.");
             }
 
-            // Freshness gate: Fresh and Grace may play; Expired denies.
-            if (verification.Freshness == Freshness.Expired)
-                return LaunchDecision.Denied(DenialReason.ManifestExpired, "Manifest is expired.");
+            // Freshness gate: Fresh and Grace may play; Expired denies unless bundled starter pack (SPEC §2.3 step 6).
+            if (verification.Freshness == Freshness.Expired && !manifests.IsBundled)
+            {
+                return LaunchDecision.Denied(
+                    DenialReason.ManifestExpired,
+                    "manifest expired beyond grace and this is not the bundled starter pack");
+            }
 
             ManifestEntry entry = FindEntry(verification.Manifest, titleId);
             if (entry == null)

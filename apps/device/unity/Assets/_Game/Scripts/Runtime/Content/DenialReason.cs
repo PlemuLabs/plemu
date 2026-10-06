@@ -29,5 +29,11 @@ namespace Plemu.Content
 
         /// <summary>The title requires an entitlement/license ticket that is missing or expired.</summary>
         EntitlementMissing,
+
+        /// <summary>The imported local file exceeds the maximum permitted size cap.</summary>
+        LocalFileTooLarge,
+
+        /// <summary>Archive files (.zip, .7z, .rar) are rejected in the local lane to avoid decompression attacks.</summary>
+        LocalArchiveNotPermitted,
     }
 }

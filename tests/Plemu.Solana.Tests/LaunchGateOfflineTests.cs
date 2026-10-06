@@ -452,6 +452,7 @@ public class LaunchGateOfflineTests
 
     private sealed class NullManifestSource : IManifestSource
     {
+        public bool IsBundled => false;
         public ManifestBundle GetVerifiedManifest() => null!;
     }
 
@@ -472,6 +473,7 @@ public class LaunchGateOfflineTests
     private sealed class TestManifestSource : IManifestSource
     {
         private readonly ManifestBundle _bundle;
+        public bool IsBundled => false;
         public TestManifestSource(ManifestBundle bundle) => _bundle = bundle;
         public ManifestBundle GetVerifiedManifest() => _bundle;
     }

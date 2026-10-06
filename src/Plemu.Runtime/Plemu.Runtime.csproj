@@ -17,6 +17,7 @@
   <ItemGroup>
     <Compile Include="..\..\apps\device\unity\Assets\_Game\Scripts\Runtime\Content\**\*.cs" Link="Content\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\apps\device\unity\Assets\_Game\Scripts\Runtime\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\apps\device\unity\Assets\_Game\Scripts\Runtime\UI\CatalogEntry.cs" Link="UI\CatalogEntry.cs" />
     <Compile Include="..\..\apps\device\unity\Assets\ThirdParty\ChaosNaCl\**\*.cs" Link="ThirdParty\ChaosNaCl\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

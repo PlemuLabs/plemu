@@ -433,6 +433,8 @@ namespace Plemu.Tests
         {
             private readonly ManifestBundle _bundle;
 
+            public bool IsBundled => false;
+
             public FakeManifestSource(ManifestBundle bundle) => _bundle = bundle;
 
             public ManifestBundle GetVerifiedManifest() => _bundle;

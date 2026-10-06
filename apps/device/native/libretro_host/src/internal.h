@@ -29,6 +29,7 @@ typedef struct {
     size_t cap;      /* bytes allocated per buffer                          */
     int front;       /* index of the last completed frame                  */
     uint32_t width, height, pitch;
+    uint32_t max_w, max_h;
     uint32_t format;   /* RH_FORMAT_* (host enum)                           */
     uint64_t serial;   /* frame counter, bumped each completed frame        */
     bool have_frame;   /* at least one frame produced                       */
@@ -37,13 +38,14 @@ typedef struct {
 } rh_video;
 
 /* ---- Audio ring (fixed capacity, stereo interleaved s16) ------------------- */
+#include <stdatomic.h>
+
 typedef struct {
     int16_t *data; /* capacity_frames * 2 samples                           */
     uint32_t capacity_frames;
-    uint32_t head; /* next write frame index                                */
-    uint32_t tail; /* next read frame index                                 */
-    uint32_t count;  /* frames currently buffered                           */
-    uint64_t drops;  /* frames dropped due to overrun                       */
+    _Atomic uint32_t head; /* next write frame index (producer writes)      */
+    _Atomic uint32_t tail; /* next read frame index (consumer writes)       */
+    _Atomic uint32_t drops;  /* frames dropped due to overrun               */
 } rh_ring;
 
 /* ---- Minimal core-variable map (SET_VARIABLES / GET_VARIABLE) -------------- */

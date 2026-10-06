@@ -17,9 +17,17 @@ namespace Plemu.App
         /// <summary>The StreamingAssets subfolder that holds the staged manifest + artifacts.</summary>
         public const string ContentSubdir = "Content";
 
-        /// <summary>Absolute path to the staged content directory (StreamingAssets/Content).</summary>
+        private static string _overrideContentDirectory;
+
+        /// <summary>Sets a custom content directory root (e.g. staged persistentDataPath on Android).</summary>
+        public static void SetContentDirectory(string customDirectory)
+        {
+            _overrideContentDirectory = customDirectory;
+        }
+
+        /// <summary>Absolute path to the staged content directory (StreamingAssets/Content or override).</summary>
         public static string ContentDirectory =>
-            Path.Combine(Application.streamingAssetsPath, ContentSubdir);
+            _overrideContentDirectory ?? Path.Combine(Application.streamingAssetsPath, ContentSubdir);
 
         /// <summary>A file-backed manifest source over the staged beta manifest.</summary>
         public static FileManifestSource ManifestSource() => new FileManifestSource(ContentDirectory);

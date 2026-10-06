@@ -8,6 +8,12 @@ namespace Plemu.Content
     public interface IManifestSource
     {
         /// <summary>
+        /// Indicates whether this manifest source is baked into the APK / device starter pack,
+        /// exempting its titles from freshness expiration (SPEC §2.3 step 6).
+        /// </summary>
+        bool IsBundled => false;
+
+        /// <summary>
         /// Returns the current manifest bundle, or <c>null</c> if none is available (e.g. no
         /// manifest has ever been accepted).
         /// </summary>

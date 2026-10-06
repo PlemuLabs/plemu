@@ -684,6 +684,7 @@ public class MonetizationEndToEndTests
     private sealed class InMemoryManifestSource : IManifestSource
     {
         private readonly ManifestBundle _bundle;
+        public bool IsBundled => false;
         public InMemoryManifestSource(ManifestBundle bundle) => _bundle = bundle;
         public ManifestBundle GetVerifiedManifest() => _bundle;
     }

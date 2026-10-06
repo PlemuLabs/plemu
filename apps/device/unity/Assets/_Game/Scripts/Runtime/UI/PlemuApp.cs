@@ -252,7 +252,7 @@ namespace Plemu.App
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(720, 1280); // portrait-ish
+            scaler.referenceResolution = new Vector2(1240, 1080); // PlaySolana PSG1 portrait display
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
