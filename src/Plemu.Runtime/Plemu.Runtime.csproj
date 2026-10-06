@@ -3,9 +3,20 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS8618;CS8603;CS8604;CS8625;CS8600;CS0809</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Core\Plemu.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\apps\device\unity\Assets\_Game\Scripts\Runtime\Content\**\*.cs" Link="Content\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\apps\device\unity\Assets\_Game\Scripts\Runtime\Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\apps\device\unity\Assets\ThirdParty\ChaosNaCl\**\*.cs" Link="ThirdParty\ChaosNaCl\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

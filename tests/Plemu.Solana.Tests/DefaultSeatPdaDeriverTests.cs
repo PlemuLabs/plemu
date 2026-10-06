@@ -47,6 +47,21 @@ public class DefaultSeatPdaDeriverTests
     }
 
     [Fact]
+    public void DeriveReceiptAddress_ThroughSeatDeriver_MatchesDefaultReceiptPdaDeriver()
+    {
+        var deriver = DefaultSeatPdaDeriver.Instance;
+        const string sha256Hex = "70b85a30034102176c6c4f450ac3cd38ab526edb6db374fd8d94c9ea768948dd";
+        byte[] sha256Bytes = Convert.FromHexString(sha256Hex);
+
+        string pda1 = deriver.DeriveReceiptAddress(ProgramId, sha256Bytes, WalletPubkey);
+        string pda2 = deriver.DeriveReceiptAddress(ProgramId, sha256Hex, WalletPubkey);
+        string expected = DefaultReceiptPdaDeriver.Instance.DeriveReceiptAddress(ProgramId, sha256Bytes, WalletPubkey);
+
+        Assert.Equal(expected, pda1);
+        Assert.Equal(expected, pda2);
+    }
+
+    [Fact]
     public void DeriveSeatAddress_DifferentPacks_ReturnDifferentAddresses()
     {
         var deriver = DefaultSeatPdaDeriver.Instance;

@@ -300,9 +300,99 @@ services.AddSingleton<IEntitlementService, MockEntitlementService>();
 ## 5. Verification & Testing
 
 Every implementation detail specified in this document is covered by automated unit tests in `plemu/tests/Plemu.Solana.Tests`:
-- `PlaySolanaWalletServiceTests`: 100% state machine coverage, cancellation, exception handling, and event delivery.
-- `SolanaEntitlementServiceTests`: Valid accounts, revoked packs, mismatched accounts, missing PDAs, and RPC timeouts.
-- `ArchitecturalIsolationTests`: Automated MSBuild project file inspection asserting `Plemu.Runtime` has 0 references to `Plemu.Solana`.
+- `PlaySolanaWalletServiceTests`: 100% state machine coverage, cancellation, exception handling, balance queries, and event delivery.
+- `SolanaEntitlementServiceTests`: Valid accounts, revoked packs, mismatched accounts, missing PDAs, commercial `Receipt` PDAs, Metaplex Core ownership, and RPC timeouts.
+- `PlemuMarketTransactionBuilderTests`: Anchor discriminators, SOL/USDC checkout instructions, tip instructions, and Solana MTU validation.
+- `LaunchGateOfflineTests` & `LaunchGateTests`: Synchronous entitlement checks, offline grace periods, and `DenialReason.EntitlementMissing`.
+- `ArchitecturalIsolationTests`: Automated MSBuild project file inspection and reflection asserting `Plemu.Runtime` has 0 references to `Plemu.Solana`.
 - `CompositionRootTests`: Container resolution ensuring `IWalletService` and `IEntitlementService` resolve to Dev 2 singletons.
+
+---
+
+## 6. Monetization Subsystem Integration (Tasks 8–13)
+
+This section provides the integration contracts and code patterns for the 5 monetization modalities (`free`, `buy_once`, `demo_full`, `pwyw`, `tip_only`).
+
+### 6.1 Challenge Signing for Download Gateway (Dev 1 / Dev 3)
+
+The Cloudflare Worker requires an Ed25519 signature over a nonce challenge before generating a presigned R2 download URL for paid entries:
+
+```csharp
+byte[] challengeBytes = Encoding.UTF8.GetBytes(challengeStringFromWorker);
+byte[]? signature = await walletService.SignMessageAsync(challengeBytes, cancellationToken);
+
+if (signature == null)
+{
+    // User cancelled in SvalGuard or wallet disconnected
+    return;
+}
+
+// Attach signature (Base58 or hex) to POST /gate/entry/:sha256
+```
+
+### 6.2 Commercial Entitlement Verification (`CanAccessEntryAsync`)
+
+Used by Dev 3 or store controllers to check on-chain purchase status:
+
+```csharp
+// Checks Receipt PDA [b"receipt", sha256, buyer] or Metaplex Core cartridge ownership
+bool hasAccess = await entitlementService.CanAccessEntryAsync(wallet, entrySha256, cancellationToken);
+```
+
+### 6.3 Transaction Construction & Rent Pre-Check (Dev 1 Checkout Flow)
+
+When purchasing games or tipping creators:
+
+```csharp
+// 1. Rent exemption pre-check for USDC purchases (requires >= 0.002 SOL for rent + fees)
+if (currency == MarketCurrency.Usdc)
+{
+    bool hasRent = await walletService.ValidateMinimumSolForUsdcAsync(cancellationToken);
+    if (!hasRent)
+    {
+        ShowAlert("Insufficient SOL for rent exemption (minimum 0.002 SOL required).");
+        return;
+    }
+}
+
+// 2. Build transaction
+SolanaTransaction tx = PlemuMarketTransactionBuilder.BuildBuyLicenseTransaction(
+    buyer: wallet.PublicKey,
+    receipt: receiptPda,
+    treasury: treasuryPubkey,
+    splitsVault: splitsVaultPubkey,
+    amount: amountInLamportsOrAtomicUsdc,
+    currency: currency,
+    recentBlockhash: recentBlockhash,
+    tipToPlatform: optionalTip);
+
+// 3. Prompt user on PSG1 SvalGuard hardware
+byte[]? signedTx = await walletService.SignTransactionAsync(tx.SerializeMessage(), cancellationToken);
+if (signedTx != null)
+{
+    // Broadcast via RPC
+}
+```
+
+### 6.4 Offline LaunchGate Verification (Dev 1 Runtime)
+
+The `LaunchGate.Authorize` method remains 100% synchronous and deterministic. For paid titles (`buy_once`, `pwyw`), it queries `IEntitlementStore`:
+
+```csharp
+LaunchDecision decision = LaunchGate.Authorize(
+    titleId,
+    manifestSource,
+    contentStore,
+    entitlementStore,
+    clock);
+
+if (!decision.IsGranted)
+{
+    if (decision.Reason == DenialReason.EntitlementMissing)
+    {
+        ShowStorePurchasePrompt(titleId);
+    }
+}
+```
 
 For any questions, reach out on the internal dev sync channel or inspect the test suite.

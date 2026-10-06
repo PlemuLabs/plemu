@@ -6,9 +6,15 @@ using Plemu.Solana.Cryptography;
 
 namespace Plemu.Solana;
 
-public class DefaultSeatPdaDeriver : ISeatPdaDeriver
+public class DefaultSeatPdaDeriver : ISeatPdaDeriver, IReceiptPdaDeriver
 {
     public static DefaultSeatPdaDeriver Instance { get; } = new();
+
+    public string DeriveReceiptAddress(string programId, byte[] artifactSha256, string walletPubkey) =>
+        DefaultReceiptPdaDeriver.Instance.DeriveReceiptAddress(programId, artifactSha256, walletPubkey);
+
+    public string DeriveReceiptAddress(string programId, string entrySha256Hex, string walletPubkey) =>
+        DefaultReceiptPdaDeriver.Instance.DeriveReceiptAddress(programId, entrySha256Hex, walletPubkey);
 
     private static readonly byte[] SeedSeat = Encoding.ASCII.GetBytes("seat");
     private static readonly byte[] PdaMarker = Encoding.ASCII.GetBytes("ProgramDerivedAddress");

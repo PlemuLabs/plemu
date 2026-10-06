@@ -27,6 +27,22 @@ namespace Plemu.Content
             IContentStore store,
             IClock clock)
         {
+            return Authorize(titleId, manifests, store, null, clock);
+        }
+
+        /// <summary>
+        /// Authorizes launching <paramref name="titleId"/> using the manifest from
+        /// <paramref name="manifests"/>, the artifact from <paramref name="store"/>,
+        /// local entitlement tickets from <paramref name="entitlements"/>, and the
+        /// current time from <paramref name="clock"/>.
+        /// </summary>
+        public static LaunchDecision Authorize(
+            string titleId,
+            IManifestSource manifests,
+            IContentStore store,
+            IEntitlementStore entitlements,
+            IClock clock)
+        {
             ManifestBundle bundle = manifests.GetVerifiedManifest();
             if (bundle == null)
                 return LaunchDecision.Denied(DenialReason.ManifestUnavailable, "No manifest available.");
@@ -72,6 +88,16 @@ namespace Plemu.Content
             {
                 store.Quarantine(titleId);
                 return LaunchDecision.Denied(DenialReason.HashMismatch, $"Hash mismatch: {titleId}.");
+            }
+
+            if (entry.Monetization != null && entry.Monetization.RequiresTicket)
+            {
+                if (entitlements == null || !entitlements.HasValidTicket(entry.Sha256, clock.UtcNow))
+                {
+                    return LaunchDecision.Denied(
+                        DenialReason.EntitlementMissing,
+                        $"Title requires purchase or valid license ticket: {titleId}.");
+                }
             }
 
             LaunchTicket ticket = new LaunchTicket(
