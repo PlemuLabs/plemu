@@ -68,6 +68,8 @@ dev-secrets/
 .memsearch/
 .gemini/
 GEMINI.md
+PRD.md
+TASKS.md
 
 # OS
 .DS_Store

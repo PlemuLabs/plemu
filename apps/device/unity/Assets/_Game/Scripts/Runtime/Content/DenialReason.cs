@@ -27,6 +27,9 @@ namespace Plemu.Content
         /// <summary>The artifact's streaming SHA-256 does not equal the entry digest.</summary>
         HashMismatch,
 
+        /// <summary>The title requires an entitlement/license ticket that is missing or expired.</summary>
+        EntitlementMissing,
+
         /// <summary>The imported local file exceeds the maximum permitted size cap.</summary>
         LocalFileTooLarge,
 

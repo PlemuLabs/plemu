@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +23,8 @@ public class SolanaEntitlementServiceTests
     {
         public SolanaAccountInfo? AccountInfoToReturn { get; set; }
         public IReadOnlyList<SolanaAccountInfo?>? MultipleAccountsToReturn { get; set; }
+        public ulong BalanceToReturn { get; set; }
+        public decimal TokenBalanceToReturn { get; set; }
         public Exception? ExceptionToThrow { get; set; }
 
         public Task<SolanaAccountInfo?> GetAccountInfoAsync(string pubkey, CancellationToken cancellationToken = default)
@@ -34,14 +38,38 @@ public class SolanaEntitlementServiceTests
             if (ExceptionToThrow != null) throw ExceptionToThrow;
             return Task.FromResult(MultipleAccountsToReturn);
         }
+
+        public Task<ulong> GetBalanceAsync(string pubkey, CancellationToken cancellationToken = default)
+        {
+            if (ExceptionToThrow != null) throw ExceptionToThrow;
+            return Task.FromResult(BalanceToReturn);
+        }
+
+        public Task<decimal> GetTokenBalanceAsync(string walletPubkey, string tokenMint, CancellationToken cancellationToken = default)
+        {
+            if (ExceptionToThrow != null) throw ExceptionToThrow;
+            return Task.FromResult(TokenBalanceToReturn);
+        }
     }
 
-    private class FakePdaDeriver : ISeatPdaDeriver
+    private class FakePdaDeriver : ISeatPdaDeriver, IReceiptPdaDeriver
     {
         public string PdaToReturn { get; set; } = "xNTPbgKARXhiC2Nn5FRiLdkv2SpD2tViiSEhW2qWruu";
         public Exception? ExceptionToThrow { get; set; }
 
         public string DeriveSeatAddress(string programId, string packPubkey, string walletPubkey)
+        {
+            if (ExceptionToThrow != null) throw ExceptionToThrow;
+            return PdaToReturn;
+        }
+
+        public string DeriveReceiptAddress(string programId, byte[] artifactSha256, string walletPubkey)
+        {
+            if (ExceptionToThrow != null) throw ExceptionToThrow;
+            return PdaToReturn;
+        }
+
+        public string DeriveReceiptAddress(string programId, string entrySha256Hex, string walletPubkey)
         {
             if (ExceptionToThrow != null) throw ExceptionToThrow;
             return PdaToReturn;
@@ -74,6 +102,40 @@ public class SolanaEntitlementServiceTests
         var pack = new SolanaAccountInfo(programId, packData, 10000);
 
         return (seat, pack);
+    }
+
+    private const string SampleArtifactSha256 = "70b85a30034102176c6c4f450ac3cd38ab526edb6db374fd8d94c9ea768948dd";
+
+    private static SolanaAccountInfo CreateValidReceiptAccount(
+        string programId = ProgramId,
+        string sha256Hex = SampleArtifactSha256,
+        string walletPubkey = WalletPubkey,
+        bool isRevoked = false)
+    {
+        byte[] walletBytes = Base58.Decode(walletPubkey);
+        byte[] sha256Bytes = Convert.FromHexString(sha256Hex);
+
+        byte[] receiptData = new byte[91];
+        byte[] discriminator = SolanaEntitlementService.ReceiptDiscriminator;
+        discriminator.CopyTo(receiptData, 0);
+        walletBytes.CopyTo(receiptData, 8);
+        sha256Bytes.CopyTo(receiptData, 40);
+        receiptData[89] = (byte)(isRevoked ? 1 : 0);
+        receiptData[90] = 254; // bump
+
+        return new SolanaAccountInfo(programId, receiptData, 1460000);
+    }
+
+    private static SolanaAccountInfo CreateValidMetaplexCoreAssetAccount(
+        string programId = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4P8JaNx4",
+        string walletPubkey = WalletPubkey)
+    {
+        byte[] walletBytes = Base58.Decode(walletPubkey);
+        byte[] data = new byte[33];
+        data[0] = 1; // Key::AssetV1
+        walletBytes.CopyTo(data, 1); // Owner pubkey at offset 1..32
+
+        return new SolanaAccountInfo(programId, data, 1000000);
     }
 
     [Fact]
@@ -551,6 +613,577 @@ public class SolanaEntitlementServiceTests
         bool canAccess = await service.CanAccessPackAsync(wallet, PackPubkey);
 
         Assert.True(canAccess);
+    }
+
+    [Fact]
+    public void ReceiptDiscriminator_MatchesAnchorHash()
+    {
+        byte[] expected = SHA256.HashData(Encoding.UTF8.GetBytes("account:Receipt"))[..8];
+        Assert.Equal(expected, SolanaEntitlementService.ReceiptDiscriminator);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ValidReceipt_ReturnsTrue()
+    {
+        var receipt = CreateValidReceiptAccount();
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.True(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntry_SyncConvenienceMethod_DelegatesSuccessfully()
+    {
+        var receipt = CreateValidReceiptAccount();
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        IEntitlementService service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntry(wallet, SampleArtifactSha256);
+
+        Assert.True(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_RevokedReceipt_ReturnsFalse()
+    {
+        var receipt = CreateValidReceiptAccount(isRevoked: true);
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_ReturnsFalse()
+    {
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = null
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptDusted_WrongOwner_ReturnsFalse()
+    {
+        var receipt = CreateValidReceiptAccount();
+        var dustedReceipt = receipt with { Owner = "FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm" };
+
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = dustedReceipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptDataTooShort_ReturnsFalse()
+    {
+        var receipt = CreateValidReceiptAccount();
+        var shortReceipt = receipt with { Data = new byte[89] };
+
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = shortReceipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptInvalidDiscriminator_ReturnsFalse()
+    {
+        var receipt = CreateValidReceiptAccount();
+        byte[] corruptedData = (byte[])receipt.Data.Clone();
+        corruptedData[0] ^= 0xFF;
+        var corruptedReceipt = receipt with { Data = corruptedData };
+
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = corruptedReceipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptBuyerMismatch_ReturnsFalse()
+    {
+        var receipt = CreateValidReceiptAccount(walletPubkey: "FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm");
+
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptArtifactSha256Mismatch_ReturnsFalse()
+    {
+        var receipt = CreateValidReceiptAccount(sha256Hex: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("short")]
+    [InlineData("not-a-valid-hex-string-and-has-invalid-characters-1234567890123456")]
+    [InlineData("70b85a30034102176c6c4f450ac3cd38ab526edb6db374fd8d94c9ea768948")]
+    [InlineData("70b85a30034102176c6c4f450ac3cd38ab526edb6db374fd8d94c9ea768948ddaa")]
+    [InlineData("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")]
+    public async Task CanAccessEntryAsync_InvalidEntrySha256_ReturnsFalse(string? invalidSha256)
+    {
+        var receipt = CreateValidReceiptAccount();
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, invalidSha256!);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ValidBase58Sha256_Succeeds()
+    {
+        byte[] rawBytes = Convert.FromHexString(SampleArtifactSha256);
+        string base58Sha = Base58.Encode(rawBytes);
+
+        var receipt = CreateValidReceiptAccount();
+        var fakeRpc = new FakeRpcClient
+        {
+            AccountInfoToReturn = receipt
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, base58Sha);
+
+        Assert.True(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_WithMetaplexCoreAssetAccountNull_ReturnsFalse()
+    {
+        const string assetPubkey = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+
+        var options = new SolanaEntitlementOptions
+        {
+            ProgramId = ProgramId,
+            EntryToAssetMap = { [SampleArtifactSha256] = assetPubkey }
+        };
+
+        var multiRpc = new MockDictionaryRpcClient(new Dictionary<string, SolanaAccountInfo?>
+        {
+            ["receipt_pda"] = null,
+            [assetPubkey] = null
+        });
+
+        var service = new SolanaEntitlementService(
+            multiRpc,
+            new FakePdaDeriver { PdaToReturn = "receipt_pda" },
+            options);
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_NullOrInvalidWallet_ReturnsFalse()
+    {
+        var service = new SolanaEntitlementService(
+            new FakeRpcClient(),
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        Assert.False(await service.CanAccessEntryAsync(null!, SampleArtifactSha256));
+        Assert.False(await service.CanAccessEntryAsync(new WalletIdentity("short"), SampleArtifactSha256));
+        Assert.False(await service.CanAccessEntryAsync(new WalletIdentity("invalid-0-O-I-l-characters-in-address-key"), SampleArtifactSha256));
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_WalletDecodesToNon32Bytes_ReturnsFalse()
+    {
+        string shortDecodedKey = new string('2', 32);
+
+        var service = new SolanaEntitlementService(
+            new FakeRpcClient(),
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(shortDecodedKey);
+        bool result = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_RpcThrowsException_FailsClosedReturnsFalse()
+    {
+        var fakeRpc = new FakeRpcClient
+        {
+            ExceptionToThrow = new HttpRequestException("RPC timeout")
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            new FakePdaDeriver(),
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_PdaDeriverThrows_ReturnsFalse()
+    {
+        var fakeRpc = new FakeRpcClient();
+        var fakePda = new FakePdaDeriver
+        {
+            ExceptionToThrow = new InvalidOperationException("Failed to find valid PDA bump")
+        };
+
+        var service = new SolanaEntitlementService(
+            fakeRpc,
+            fakePda,
+            new SolanaEntitlementOptions { ProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_WithValidMetaplexCoreCartridge_ReturnsTrue()
+    {
+        const string assetPubkey = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+        var metaplexAsset = CreateValidMetaplexCoreAssetAccount(walletPubkey: WalletPubkey);
+
+        var options = new SolanaEntitlementOptions
+        {
+            ProgramId = ProgramId,
+            EntryToAssetMap = { [SampleArtifactSha256] = assetPubkey }
+        };
+
+        var multiRpc = new MockDictionaryRpcClient(new Dictionary<string, SolanaAccountInfo?>
+        {
+            ["receipt_pda"] = null,
+            [assetPubkey] = metaplexAsset
+        });
+
+        var fakePda = new FakePdaDeriver { PdaToReturn = "receipt_pda" };
+
+        var service = new SolanaEntitlementService(
+            multiRpc,
+            fakePda,
+            options);
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.True(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_WithMetaplexCoreCartridgeWrongOwner_ReturnsFalse()
+    {
+        const string assetPubkey = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+        var metaplexAsset = CreateValidMetaplexCoreAssetAccount(walletPubkey: "FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm");
+
+        var options = new SolanaEntitlementOptions
+        {
+            ProgramId = ProgramId,
+            EntryToAssetMap = { [SampleArtifactSha256] = assetPubkey }
+        };
+
+        var multiRpc = new MockDictionaryRpcClient(new Dictionary<string, SolanaAccountInfo?>
+        {
+            ["receipt_pda"] = null,
+            [assetPubkey] = metaplexAsset
+        });
+
+        var service = new SolanaEntitlementService(
+            multiRpc,
+            new FakePdaDeriver { PdaToReturn = "receipt_pda" },
+            options);
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_WithMetaplexCoreCartridgeWrongProgram_ReturnsFalse()
+    {
+        const string assetPubkey = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+        var metaplexAsset = CreateValidMetaplexCoreAssetAccount(programId: "11111111111111111111111111111111");
+
+        var options = new SolanaEntitlementOptions
+        {
+            ProgramId = ProgramId,
+            EntryToAssetMap = { [SampleArtifactSha256] = assetPubkey }
+        };
+
+        var multiRpc = new MockDictionaryRpcClient(new Dictionary<string, SolanaAccountInfo?>
+        {
+            ["receipt_pda"] = null,
+            [assetPubkey] = metaplexAsset
+        });
+
+        var service = new SolanaEntitlementService(
+            multiRpc,
+            new FakePdaDeriver { PdaToReturn = "receipt_pda" },
+            options);
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_WithMetaplexCoreCartridgeDataTooShort_ReturnsFalse()
+    {
+        const string assetPubkey = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+        var metaplexAsset = new SolanaAccountInfo("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4P8JaNx4", new byte[32], 1000);
+
+        var options = new SolanaEntitlementOptions
+        {
+            ProgramId = ProgramId,
+            EntryToAssetMap = { [SampleArtifactSha256] = assetPubkey }
+        };
+
+        var multiRpc = new MockDictionaryRpcClient(new Dictionary<string, SolanaAccountInfo?>
+        {
+            ["receipt_pda"] = null,
+            [assetPubkey] = metaplexAsset
+        });
+
+        var service = new SolanaEntitlementService(
+            multiRpc,
+            new FakePdaDeriver { PdaToReturn = "receipt_pda" },
+            options);
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_ReceiptNotFound_WithMetaplexCoreRpcException_ReturnsFalse()
+    {
+        const string assetPubkey = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
+
+        var options = new SolanaEntitlementOptions
+        {
+            ProgramId = ProgramId,
+            EntryToAssetMap = { [SampleArtifactSha256] = assetPubkey }
+        };
+
+        var multiRpc = new MockDictionaryRpcClient(new Dictionary<string, SolanaAccountInfo?>
+        {
+            ["receipt_pda"] = null
+        })
+        {
+            ExceptionOnPubkey = assetPubkey
+        };
+
+        var service = new SolanaEntitlementService(
+            multiRpc,
+            new FakePdaDeriver { PdaToReturn = "receipt_pda" },
+            options);
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.False(canAccess);
+    }
+
+    [Fact]
+    public async Task CanAccessEntryAsync_WithMockHttpMessageHandler_EndToEndVerification()
+    {
+        var receipt = CreateValidReceiptAccount();
+        string receiptDataB64 = Convert.ToBase64String(receipt.Data);
+
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    $$"""
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {
+                            "context": { "slot": 777 },
+                            "value": {
+                                "data": ["{{receiptDataB64}}", "base64"],
+                                "executable": false,
+                                "lamports": 1460000,
+                                "owner": "{{ProgramId}}",
+                                "rentEpoch": 0
+                            }
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var rpcClient = new SolanaRpcClient(httpClient);
+
+        using var service = new SolanaEntitlementService(
+            rpcClient,
+            DefaultSeatPdaDeriver.Instance,
+            new SolanaEntitlementOptions { ProgramId = ProgramId, MarketProgramId = ProgramId });
+
+        var wallet = new WalletIdentity(WalletPubkey);
+        bool canAccess = await service.CanAccessEntryAsync(wallet, SampleArtifactSha256);
+
+        Assert.True(canAccess);
+    }
+
+    private class MockDictionaryRpcClient : ISolanaRpcClient
+    {
+        private readonly IDictionary<string, SolanaAccountInfo?> _accounts;
+        public string? ExceptionOnPubkey { get; set; }
+
+        public MockDictionaryRpcClient(IDictionary<string, SolanaAccountInfo?> accounts)
+        {
+            _accounts = accounts;
+        }
+
+        public Task<SolanaAccountInfo?> GetAccountInfoAsync(string pubkey, CancellationToken cancellationToken = default)
+        {
+            if (string.Equals(pubkey, ExceptionOnPubkey, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new HttpRequestException("RPC network error on pubkey: " + pubkey);
+            }
+            _accounts.TryGetValue(pubkey, out var info);
+            return Task.FromResult(info);
+        }
+
+        public Task<IReadOnlyList<SolanaAccountInfo?>?> GetMultipleAccountsAsync(IReadOnlyList<string> pubkeys, CancellationToken cancellationToken = default)
+        {
+            var list = new List<SolanaAccountInfo?>();
+            foreach (var key in pubkeys)
+            {
+                _accounts.TryGetValue(key, out var info);
+                list.Add(info);
+            }
+            return Task.FromResult<IReadOnlyList<SolanaAccountInfo?>?>(list);
+        }
+
+        public Task<ulong> GetBalanceAsync(string pubkey, CancellationToken cancellationToken = default) => Task.FromResult(0UL);
+        public Task<decimal> GetTokenBalanceAsync(string walletPubkey, string tokenMint, CancellationToken cancellationToken = default) => Task.FromResult(0m);
     }
 
     private class TestHttpMessageHandler : HttpMessageHandler

@@ -11,8 +11,8 @@ namespace Plemu.Content
     /// </summary>
     /// <remarks>
     /// Synchronous by design for v0; an async wrapper arrives with the download manager. The
-    /// bundled-manifest exemption for Expired starter-pack titles (SPEC §2.3 step 6) is a later
-    /// task — for now Expired always denies.
+    /// bundled-manifest exemption for Expired starter-pack titles (SPEC §2.3 step 6) is supported
+    /// via <see cref="IManifestSource.IsBundled"/>.
     /// </remarks>
     public static class LaunchGate
     {
@@ -25,6 +25,22 @@ namespace Plemu.Content
             string titleId,
             IManifestSource manifests,
             IContentStore store,
+            IClock clock)
+        {
+            return Authorize(titleId, manifests, store, null, clock);
+        }
+
+        /// <summary>
+        /// Authorizes launching <paramref name="titleId"/> using the manifest from
+        /// <paramref name="manifests"/>, the artifact from <paramref name="store"/>,
+        /// local entitlement tickets from <paramref name="entitlements"/>, and the
+        /// current time from <paramref name="clock"/>.
+        /// </summary>
+        public static LaunchDecision Authorize(
+            string titleId,
+            IManifestSource manifests,
+            IContentStore store,
+            IEntitlementStore entitlements,
             IClock clock)
         {
             ManifestBundle bundle = manifests.GetVerifiedManifest();
@@ -76,6 +92,16 @@ namespace Plemu.Content
             {
                 store.Quarantine(titleId);
                 return LaunchDecision.Denied(DenialReason.HashMismatch, $"Hash mismatch: {titleId}.");
+            }
+
+            if (entry.Monetization != null && entry.Monetization.RequiresTicket)
+            {
+                if (entitlements == null || !entitlements.HasValidTicket(entry.Sha256, clock.UtcNow))
+                {
+                    return LaunchDecision.Denied(
+                        DenialReason.EntitlementMissing,
+                        $"Title requires purchase or valid license ticket: {titleId}.");
+                }
             }
 
             LaunchTicket ticket = new LaunchTicket(

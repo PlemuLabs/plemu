@@ -40,7 +40,7 @@ namespace Plemu.Content
             string sha256;
             using (var stream = File.OpenRead(entry.FilePath))
             {
-                sha256 = Sha256Verifier.ComputeHashHex(stream);
+                sha256 = Sha256Verifier.ComputeHex(stream);
             }
 
             string coreId = ResolveCoreId(entry.System);

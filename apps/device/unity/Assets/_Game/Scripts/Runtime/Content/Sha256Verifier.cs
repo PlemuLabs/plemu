@@ -36,6 +36,11 @@ namespace Plemu.Content
         }
 
         /// <summary>
+        /// Alias for <see cref="ComputeHex(Stream)"/>.
+        /// </summary>
+        public static string ComputeHashHex(Stream stream) => ComputeHex(stream);
+
+        /// <summary>
         /// True when the streaming digest of <paramref name="stream"/> equals
         /// <paramref name="expectedHex"/>. Comparison is ordinal against the lowercased
         /// expected value, so callers may pass either case.
