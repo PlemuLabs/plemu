@@ -1,25 +1,33 @@
 # Especificação Técnica: Plemu Mobile Demo para Solana Seeker (Android APK)
+## Com Bolsa de Valores de Jogos (Game-Fi Bonding Curves & MWA)
 
 **Data de Publicação:** 2026-10-06  
 **Status:** Aprovado para Implementação  
 **Autor:** Plemu Labs (Dev 1 / Dev 2)  
 **Alvo de Hardware:** Solana Seeker (Android 14+, ARM64, dApp Store 2.0)  
-**Track:** Solana Mobile Hackathon — Gaming & Mobile Infrastructure  
+**Track:** Solana Mobile Hackathon — Gaming, DeFi & Mobile Infrastructure  
 
 ---
 
 ## 1. Visão Executiva & Objetivos da Demo
 
-O **Plemu** é um emulador e console retrô Web3 com arquitetura *content-trust fail-closed*. Para o **Solana Mobile Hackathon**, entregaremos um APK nativo otimizado especificamente para o smartphone **Solana Seeker**, demonstrando como a propriedade digital de jogos, segurança de chaves em hardware e emulação de alta fidelidade operam em conjunto sem fricção.
+O **Plemu** é um ecossistema de emulação retrô Web3 com arquitetura *content-trust fail-closed* e uma camada financeira descentralizada. Para o **Solana Mobile Hackathon**, entregaremos um APK nativo de alto impacto para o **Solana Seeker**, introduzindo o conceito inovador de **"Bolsa de Valores de Jogos" (Game Token Market)**.
+
+No Plemu, **cada jogo é um token negociável na Solana**, cujo valor sobe e desce dinamicamente por meio de uma **Bonding Curve On-Chain**. Quanto mais um jogo é jogado, comprado e apoiado com gorjetas, mais liquidez entra em sua curva, valorizando o token do jogo em tempo real. Jogadores podem não apenas jogar a 60 FPS com controles táteis retrô, mas também investir antecipadamente em jogos promissores e lucrar com sua popularidade diretamente pelo smartphone.
 
 ### Metas Principais da Demo
 1. **Emulação Nativa a 60 FPS:** Execução nativa do core Game Boy / Game Boy Color (SameBoy) via `libretro_host.so` compilado em `arm64-v8a` integrado ao Unity 6.
-2. **Integração MWA 2.0 & Seed Vault:** Autenticação e assinatura de transações através do **Mobile Wallet Adapter (MWA)**, acionando o hardware seguro (**Seed Vault**) do Solana Seeker para biometria e assinatura de transações.
-3. **Hero Flow — Loja & Compra On-Chain com Receipt PDA:**
-   - O APK inicializa com um jogo gratuito para teste imediato (`Libbet`).
-   - Um título comercial premium de demonstração é exibido na Loja com preço em Devnet USDC / SOL.
-   - O jogador toca em **"Comprar Licença"**, assina a transação via MWA com autorização biométrica no Seed Vault, o programa Anchor `plemu` registra o `Receipt` PDA na Solana Devnet, e o `LaunchGate` criptográfico autoriza e inicializa a ROM local instantaneamente.
-4. **Touch Controls Estilo Game Boy (Modo Retrato):** UI customizada com proporção 4:3 na metade superior e uma carcaça retrô com D-Pad e botões táteis virtuais com **feedback háptico (vibração)** na metade inferior.
+2. **Integração MWA 2.0 & Seed Vault:** Autenticação e assinatura de transações através do **Mobile Wallet Adapter (MWA)**, acionando a partição segura de hardware (**Seed Vault**) do Solana Seeker para biometria e assinatura instantânea.
+3. **Bolsa de Valores de Jogos (Bonding Curve Unificada):**
+   - Cada jogo possui um SPL Token dedicado (ex: `$LIBBET`, `$STAR`).
+   - Compras de licenças e gorjetas injetam automaticamente liquidez na Bonding Curve do jogo, elevando o preço do token.
+   - Jogadores e investidores podem comprar e vender tokens do jogo em 1 clique na interface do Seeker via swap instantâneo MWA.
+4. **Hero Flow Completo (Loja -> Compra de Licença -> Trading de Token -> Gameplay):**
+   - Jogo grátis imediato (`Libbet`) com controles virtuais táteis.
+   - Jogo comercial premium (`Starforge Quest`) bloqueado pelo `LaunchGate`.
+   - Compra da licença via MWA: registra o `Receipt` PDA e injeta fundos na Bonding Curve do `$STAR`.
+   - Demonstração da valorização do token ao vivo no gráfico e ticker do jogo!
+5. **Touch Controls Estilo Game Boy (Modo Retrato):** UI customizada vertical com proporção 4:3 na metade superior, mini-ticker financeiro e carcaça retrô com D-Pad e botões com **feedback háptico (vibração)** na metade inferior.
 
 ---
 
@@ -34,7 +42,8 @@ O **Plemu** é um emulador e console retrô Web3 com arquitetura *content-trust 
 │   ┌────────────────────────────────┐  ┌─────────────────────────────┐  │
 │   │   UGUI Retrô (Modo Retrato)    │  │  Virtual Touch RetroPad     │  │
 │   │   - Tela do Jogo 4:3 (Topo)    │  │  - D-Pad + A/B/Select/Start │  │
-│   │   - Loja / Vitrine Devnet      │  │  - Android Haptic Feedback  │  │
+│   │   - Mini-Ticker ($STAR ▲ +12%) │  │  - Android Haptic Feedback  │  │
+│   │   - Painel da Bolsa / Swap     │  │                             │  │
 │   └─────────────────┬──────────────┘  └──────────────┬──────────────┘  │
 │                     │                                │                 │
 │                     ▼                                ▼                 │
@@ -61,8 +70,9 @@ O **Plemu** é um emulador e console retrô Web3 com arquitetura *content-trust 
 │                                                                        │
 │   ┌────────────────────────────────┐  ┌─────────────────────────────┐  │
 │   │ PlemuMarketTransactionBuilder  │  │   MwaBridge (Android AAR)   │  │
-│   │  - Anchor buy_license inst.    │  │   - MWA 2.0 Intent Client   │  │
-│   │  - Receipt PDA derivation      │  │   - Seed Vault Biometrics   │  │
+│   │  - Anchor buy_license + split  │  │   - MWA 2.0 Intent Client   │  │
+│   │  - SwapBuy / SwapSell instruc. │  │   - Seed Vault Biometrics   │  │
+│   │  - Bonding Curve Math          │  │                             │  │
 │   └────────────────┬───────────────┘  └──────────────┬──────────────┘  │
 │                    │                                 │                 │
 │                    └────────────────►◄───────────────┘                 │
@@ -72,29 +82,46 @@ O **Plemu** é um emulador e console retrô Web3 com arquitetura *content-trust 
                         Solana Devnet RPC / Clusters
 ```
 
-### Componentes de Software
+---
 
-| Componente | Linguagem/Tecnologia | Localização no Repositório | Responsabilidade |
-|---|---|---|---|
-| **App Shell & UI** | C# (Unity 6 / UGUI) | `apps/device/unity/Assets/_Game/Scripts/Runtime/UI/` | Navegação da Loja, tela de detalhes, renderização do emulador e HUD de status. |
-| **Virtual Gamepad** | C# (Unity EventSystem) | `apps/device/unity/Assets/_Game/Scripts/Runtime/Emulation/` | D-Pad e botões A/B/Start/Select com suporte a touch multitouch e haptics Android. |
-| **Content Bootstrap** | C# (Unity) | `apps/device/unity/Assets/_Game/Scripts/Runtime/Platform/` | Extração de `StreamingAssets` para `Application.persistentDataPath` na primeira execução. |
-| **LaunchGate** | C# (.NET Standard) | `apps/device/unity/Assets/_Game/Scripts/Runtime/Content/` | Validação fail-closed antes de qualquer execução de jogo. |
-| **Libretro Host** | C11 (ARM64 JNI) | `apps/device/unity/Assets/Plugins/Android/libs/arm64-v8a/` | Hospedagem nativa do core SameBoy com ring buffer de áudio C11 thread-safe. |
-| **MWA Adapter Bridge** | Java/Kotlin + C# | `apps/device/unity/Assets/Plugins/Android/` | Disparo de Intents do Mobile Wallet Adapter para conexão e assinatura com o Seed Vault. |
-| **Solana Transaction Engine** | C# | `src/Plemu.Solana/` | Construção de instruções Anchor `buy_license`, derivação de PDAs e queries RPC. |
+## 3. Mecânica Econômica: Games como Tokens Negociáveis (Bonding Curve)
+
+### 3.1. Princípio da "Bolsa de Valores de Jogos"
+Cada jogo indexado no catálogo do Plemu é associado a um **SPL Token Mint** e uma conta PDA de **Bonding Curve**:
+- **Exemplo:** Jogo *Starforge Quest* -> Ticker `$STAR`.
+- **Preço Inicial ($P_0$):** 0.001 SOL.
+- **Mecanismo de Curva:** Curva polinomial com reserva proporcional:
+  $$P(S) = P_0 + k \cdot S^2$$
+  onde $S$ é o supply circulante e $k$ é o fator de escala de liquidez da curva.
+
+### 3.2. Fluxo de Injeção de Liquidez (Jogadores -> Preço Sobe)
+Quando um jogador adquire uma licença de jogo ou envia uma gorjeta:
+1. **Split Automático:**
+   - 70% do valor vai diretamente para o criador do jogo (Creator Splits Vault).
+   - 5% vai para a Tesouraria da Plataforma Plemu.
+   - **25% do valor é automaticamente roteado para a Bonding Curve do Token do Jogo** (compra direta de tokens para o pool de reserva).
+2. **Impacto Econômico:** Cada novo jogador que compra a licença gera pressão compradora direta no token do jogo, fazendo o gráfico de preço subir. Jogos com excelente retenção e volume de jogadores têm tokens que se valorizam exponencialmente.
+
+### 3.3. Painel de Trading no Solana Seeker (Investir / Especular)
+A interface móvel disponibiliza a aba **"Mercado / Bolsa"**:
+- **Gráfico de Preço:** Gráfico sparkline/linha renderizado com os últimos ticks de negociação (24h high/low, volume e variação percentual).
+- **Swap em 1 Toque (Buy / Sell):**
+  - O usuário digita a quantidade de SOL que deseja investir no jogo (ex: 0.1 SOL) ou tokens `$STAR` que deseja realizar lucro.
+  - Toca em **"Swap via Seed Vault"**.
+  - O MWA abre o sensor de impressão digital do Seeker, assina e confirma a transação em ~1 segundo.
+- **Cashback de Jogador:** Quem compra a licença recebe automaticamente um lote inicial de boas-vindas do token do jogo, tornando todo jogador um co-proprietário do jogo.
 
 ---
 
-## 3. Integração Mobile Wallet Adapter (MWA 2.0) & Seed Vault
+## 4. Integração Mobile Wallet Adapter (MWA 2.0) & Seed Vault
 
-### 3.1. Princípios de Segurança & Protocolo
-O Solana Seeker possui o **Seed Vault**, uma partição segura de hardware (Secure Execution Environment) que isola chaves privadas do sistema operacional Android. A comunicação deve ser estritamente mediada pelo protocolo padrão **Solana Mobile Wallet Adapter 2.0**:
-- Esquema de Intent: `solana-wallet://` com parâmetros de sessão encriptados via ECDH (Curve25519).
-- O aplicativo cliente solicita permissões mínimas: `solana:devnet`.
-- A assinatura de transações ocorre dentro do ambiente do Seed Vault, exigindo autenticação biométrica (impressão digital) ou PIN do Seeker.
+### 4.1. Comunicação Segura com o Hardware Seeker
+O Solana Seeker isola as chaves mestras no ambiente seguro **Seed Vault**:
+- O Plemu APK comunica-se via protocolo de intents `solana-wallet://`.
+- Sessão criptografada via ECDH (Diffie-Hellman na Curve25519).
+- Suporte a transações atômicas contendo múltiplas instruções (ex: `buy_license` + split de liquidez na bonding curve).
 
-### 3.2. Contrato da Ponte MWA C# (`IMobileWalletAdapter`)
+### 4.2. Contratos C# de Integração (`IMobileWalletAdapter.cs` & `IBondingCurveService.cs`)
 Em `apps/device/unity/Assets/_Game/Scripts/Runtime/Wallet/`:
 ```csharp
 public interface IMobileWalletAdapter
@@ -104,59 +131,55 @@ public interface IMobileWalletAdapter
     Task<byte[]> SignAndSendTransactionAsync(byte[] serializedTransaction, CancellationToken cancellationToken = default);
     Task DisconnectAsync();
 }
+
+public interface IBondingCurveService
+{
+    Task<GameTokenQuote> GetQuoteAsync(string gameId, ulong solAmountIn);
+    Task<GameTokenMarketData> GetMarketDataAsync(string gameId);
+    byte[] BuildSwapBuyInstruction(string buyer, string gameId, ulong solAmount, ulong minTokensOut);
+    byte[] BuildSwapSellInstruction(string seller, string gameId, ulong tokenAmount, ulong minSolOut);
+}
 ```
 
-### 3.3. Implementação da Ponte Android (`AndroidMwaBridge.cs`)
-- Utiliza a classe Android JNI (`AndroidJavaObject` / `AndroidJavaClass`) para interagir com o pacote leve de intents MWA.
-- Suporta fallback gracioso para mock local caso a aplicação seja executada dentro do Unity Editor para testes rápidos.
+---
+
+## 5. Jornada da Demonstração no Hackathon (The Hero Flow)
+
+A apresentação aos jurados do hackathon dura **2 minutos** e demonstra a união entre emulação nativa e finanças de jogos:
+
+### Minuto 0:00 a 0:30 — Emulação e Instant-Play
+1. O apresentador abre o app no Solana Seeker no formato vertical.
+2. Abre o jogo gratuito **Libbet** instantaneamente a 60 FPS.
+3. Demonstra os controles táteis na carcaça retrô com feedback de vibração háptica nos dedos.
+
+### Minuto 0:30 a 1:00 — A Bolsa de Valores de Jogos & Ticker ao Vivo
+1. O apresentador volta para a vitrine e entra na aba **"Bolsa de Jogos"**.
+2. Mostra o título **Starforge Quest** com seu ticker oficial: **`$STAR: 0.042 SOL (▲ +14.8%)`**.
+3. O apresentador destaca: *"No Plemu, cada jogo é um ativo líquido. Conforme o jogo ganha tração, a bonding curve valoriza o token do jogo."*
+
+### Minuto 1:00 a 1:30 — Compra da Licença via MWA & Injeção de Liquidez
+1. O apresentador clica em **"Comprar Licença — 0.05 SOL"**.
+2. O Seeker aciona o **Seed Vault**: o apresentador toca o polegar no leitor biométrico.
+3. A transação é confirmada na Devnet:
+   - A conta `Receipt` PDA é criada on-chain.
+   - Uma fatia da transação entra na Bonding Curve do `$STAR`.
+4. O gráfico de preço na tela do Seeker atualiza em tempo real: o preço do `$STAR` sobe imediatamente para **`0.046 SOL (▲ +22.4%)`** diante dos jurados!
+
+### Minuto 1:30 a 2:00 — Trade de Tokens & Execução do Jogo
+1. O apresentador faz um mini-swap direto: investe 0.1 SOL comprando mais tokens `$STAR` com assinatura instantânea pelo Seed Vault.
+2. Toca em **"Jogar Agora"**: o `LaunchGate` valida a assinatura do manifesto, o hash SHA-256 e o `Receipt` PDA.
+3. O jogo comercial inicializa suavemente a 60 FPS, com um mini-ticker financeiro exibindo a cotação do `$STAR` no topo da tela do Game Boy.
 
 ---
 
-## 4. Jornada da Demonstração (The Hero Flow)
+## 6. Design da Interface do Usuário (UI & Touch Controls)
 
-A demonstração no estande/palco do hackathon segue uma trilha cronometrada de 90 segundos:
-
-### Passo 1: Inicialização e Instant-Play (0 a 20s)
-1. O jurado/apresentador abre o APK no Solana Seeker.
-2. A tela inicial em modo retrato apresenta a moldura retrô do Plemu.
-3. O catálogo exibe:
-   - **Libbet** (Gratuito / Open-Source): Tocar em "Jogar" abre imediatamente a ROM a 60 FPS.
-   - O apresentador demonstra os controles táteis na tela com feedback de vibração nos botões.
-
-### Passo 2: Acesso à Loja & Jogo Comercial Protegido (20 a 40s)
-1. O usuário toca em "Voltar" e seleciona o segundo título: **Starforge Quest** (Jogo Comercial de Demonstração).
-2. O botão inicial indica: **"Comprar Licença — 0.05 SOL (Devnet)"**.
-3. Se o usuário tentar forçar a execução sem licença, o `LaunchGate` intercepta a chamada em menos de 1ms e exibe na tela:
-   ```
-   DENIED: EntitlementMissing
-   Title requires purchase or valid license ticket: starforge-demo.
-   ```
-
-### Passo 3: Conexão e Assinatura com Seed Vault via MWA (40 a 70s)
-1. O usuário clica em **"Comprar Licença"**.
-2. A aplicação dispara o MWA. O Seeker abre o modal seguro de autorização com a identidade da carteira.
-3. O usuário autoriza com a impressão digital no sensor biométrico do Seeker.
-4. A transação Anchor `buy_license` construída por `PlemuMarketTransactionBuilder`:
-   - Envia 0.05 SOL do comprador para a Tesouraria e Vault do Criador.
-   - Inicializa a conta PDA de Recibo: `[b"receipt", artifact_sha256, buyer_pubkey]`.
-5. A transação é transmitida para a Solana Devnet e confirmada em ~1 segundo.
-
-### Passo 4: Desbloqueio e Emulação Imediata (70 a 90s)
-1. O `SolanaEntitlementService` consulta o RPC Devnet e valida a existência do `Receipt` PDA assinado pelo programa `plemu`.
-2. O `IEntitlementStore` armazena o ticket de licença localmente em cache criptográfico seguro.
-3. O botão na tela transiciona para **"Jogar Agora"** com o selo visual **"Licenciado na Solana"**.
-4. O `LaunchGate.Authorize` emite o `LaunchTicket` e o jogo comercial inicializa com áudio e vídeo fluidos.
-
----
-
-## 5. Design da Interface do Usuário (UI & Touch Controls)
-
-### 5.1. Layout da Tela (Modo Retrato 20:9)
-A tela do Solana Seeker é aproveitada verticalmente em duas seções ergonômicas:
-
+### 6.1. Tela Principal (Modo Retrato Game Boy com Ticker)
 ```
 ┌──────────────────────────────────────────────┐
 │  PLEMU MOBILE   [ Devnet: Connected (0x4P..) ]│
+├──────────────────────────────────────────────┤
+│  TICKER: $STAR 0.046 SOL ▲ +22.4% | MC: $46k │
 ├──────────────────────────────────────────────┤
 │                                              │
 │             TELA DO JOGO (4:3)               │
@@ -177,61 +200,67 @@ A tela do Solana Seeker é aproveitada verticalmente em duas seções ergonômic
 │                                              │
 │         [ SELECT ]        [ START ]          │
 │                                              │
+├──────────────────────────────────────────────┤
+│  [ ABA: JOGAR ]     [ ABA: BOLSA / SWAP ]    │
 └──────────────────────────────────────────────┘
 ```
 
-### 5.2. Especificação do Virtual RetroPad
-1. **D-Pad Virtual:**
-   - Detecção contínua de arraste e toque nos 4 eixos (`RetroPad.Button.Up, Down, Left, Right`).
-   - Zona morta configurada para evitar acionamentos diagonais acidentais.
-2. **Botões de Ação:**
-   - Botões A e B posicionados no ângulo natural do polegar direito.
-   - Toque inicial aciona `HapticFeedback.Perform(HapticFeedbackType.VirtualKey)`.
-3. **Mapeamento de Entrada:**
-   - A classe `TouchInputSource.cs` implementa `IEmulationInputSource` e traduz eventos de toque diretamente para as máscaras de bits do `RetroPad` no frame do `libretro_host`.
+### 6.2. Aba "Bolsa / Swap do Jogo"
+- **Gráfico:** Linha verde/vermelha com oscilação recente do preço.
+- **Estatísticas:** Preço atual em SOL e USD, Market Cap estimado, Volume 24h e Holders.
+- **Card de Negociação:**
+  - Campo "Você Paga": [ 0.1 SOL ]
+  - Campo "Você Recebe": [ ~2.17 $STAR ]
+  - Botão de Ação: `[ SWAP COM SEED VAULT ]` (estilizado retrô-cyberpunk).
 
 ---
 
-## 6. Estrutura de Arquivos e Modificações
+## 7. Estrutura de Arquivos e Componentes
 
 ```
 apps/device/unity/
 ├── Assets/
 │   ├── Plugins/
 │   │   └── Android/
-│   │       ├── AndroidManifest.xml              # Permissões de Internet, Haptics e Queries MWA
-│   │       ├── libs/arm64-v8a/
-│   │       │   ├── libretro_host.so             # Binário C do host (já presente)
-│   │       │   └── libsameboy_libretro_android.so # Core SameBoy (já presente)
-│   │       └── mwa/
-│   │           └── MwaPlugin.aar                # Helper AAR para intent MWA 2.0
+│   │       ├── AndroidManifest.xml              # Permissões MWA, Internet e Haptics
+│   │       └── libs/arm64-v8a/
+│   │           ├── libretro_host.so             # Host C de emulação (já integrado)
+│   │           └── libsameboy_libretro_android.so # Núcleo SameBoy (já integrado)
 │   ├── _Game/
 │   │   ├── Scripts/
 │   │   │   └── Runtime/
 │   │   │       ├── Emulation/
-│   │   │       │   ├── TouchInputSource.cs      # Entrada de controles táteis virtuais
+│   │   │       │   ├── TouchInputSource.cs      # Entrada multitouch para emulação
 │   │   │       │   └── VirtualRetroPadUI.cs     # Componente visual e háptico dos botões
 │   │   │       ├── Platform/
-│   │   │       │   └── AndroidHaptics.cs        # Wrapper JNI para Android Vibrator
+│   │   │       │   └── AndroidHaptics.cs        # Wrapper JNI para motor de vibração Android
 │   │   │       ├── Wallet/
-│   │   │       │   ├── IMobileWalletAdapter.cs  # Contrato de conexão e assinatura MWA
-│   │   │       │   └── AndroidMwaAdapter.cs     # Implementação MWA com fallback para Editor
+│   │   │       │   ├── IMobileWalletAdapter.cs  # Contrato MWA
+│   │   │       │   ├── AndroidMwaAdapter.cs     # Implementação MWA 2.0 / Seed Vault
+│   │   │       │   ├── IBondingCurveService.cs  # Serviço de cotações e swaps da curva
+│   │   │       │   └── BondingCurveService.cs   # Implementação C# das fórmulas da curva
 │   │   │       └── UI/
-│   │   │           └── PlemuApp.cs              # Extensão da UI para Modo Retrato e Loja Devnet
+│   │   │           ├── PlemuApp.cs              # Shell do app, modo retrato e navegação
+│   │   │           ├── GameTokenMarketUI.cs     # Painel de trading, gráfico e cotação
+│   │   │           └── MiniTickerHUD.cs         # Ticker flutuante no topo do emulador
 │   │   └── Tests/
 │   │       └── EditMode/
-│   │           ├── TouchInputSourceTests.cs     # Testes de mapeamento e multitouch
-│   │           └── MobileCommerceFlowTests.cs   # Testes de simulação de compra e gate on-chain
+│   │           ├── TouchInputSourceTests.cs     # Testes de input e deadzone
+│   │           ├── BondingCurveMathTests.cs     # Testes de precisão matemática da curva
+│   │           └── MobileCommerceFlowTests.cs   # Teste end-to-end do gate e compra on-chain
 ```
 
 ---
 
-## 7. Critérios de Aceite & Validação
+## 8. Critérios de Aceite & Validação
 
-- [ ] **Compilação de APK:** O projeto Unity constrói com sucesso para `Android ARM64 (IL2CPP)` gerando `PlemuSeekerDemo.apk`.
-- [ ] **Content Bootstrap:** Na primeira execução, o app extrai com sucesso o catálogo de `StreamingAssets` para `Application.persistentDataPath` sem corrupção.
-- [ ] **Execução 60 FPS:** O jogo `Libbet` roda a 60 FPS cravados sem engasgos de áudio no emulador Android ARM64 e no dispositivo físico.
-- [ ] **Intercepção do LaunchGate:** O jogo comercial `Starforge` é estritamente bloqueado com `DenialReason.EntitlementMissing` antes de qualquer transação on-chain.
-- [ ] **Conexão e Assinatura MWA:** Ao tocar em comprar, o Seeker abre a carteira MWA, autentica e retorna a assinatura da transação.
-- [ ] **Desbloqueio On-Chain:** A conta `Receipt` PDA criada na Solana Devnet é identificada por `SolanaEntitlementService`, liberando o botão "Jogar" e iniciando a ROM.
-- [ ] **Zero Warning / Zero Erros em Testes:** Toda a suíte de testes existente (`dotnet test tests/Plemu.Solana.Tests` e testes EditMode no Unity) permanece verde.
+- [ ] **Compilação de APK:** Projeto Unity gera `PlemuSeekerDemo.apk` para Android ARM64 (IL2CPP) sem erros de linkagem ou JNI.
+- [ ] **Emulação Nativa 60 FPS:** Jogo roda com áudio sincronizado e framerate estável a 60 quadros por segundo no Seeker.
+- [ ] **Integração MWA & Seed Vault:** O aplicativo solicita e recebe assinaturas de transação via MWA com prompt biométrico nativo do Seeker.
+- [ ] **Content Gate Fail-Closed:** O jogo comercial `Starforge` é rigidamente bloqueado antes da emissão da licença on-chain (`DenialReason.EntitlementMissing`).
+- [ ] **Dinâmica da Bonding Curve:**
+  - A compra da licença transfere fundos para a curva e registra o `Receipt` PDA.
+  - O preço do token `$STAR` atualiza dinamicamente e é refletido no `MiniTickerHUD` e no painel `GameTokenMarketUI`.
+  - O swap de tokens (compra e venda direta de cotas do jogo) executa corretamente com autorização da carteira.
+- [ ] **Feedback Háptico:** Os botões virtuais ativam o motor háptico do Seeker ao serem pressionados.
+- [ ] **Conformidade de Testes:** Todas as suítes de testes C# (`Plemu.Solana.Tests` e testes EditMode no Unity) passam com 100% de sucesso.
