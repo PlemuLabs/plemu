@@ -684,6 +684,9 @@ public class MonetizationEndToEndTests
             minTokensOut: buyQuote.MinOutAmount);
 
         Assert.Equal(8, buySwapIx.Accounts.Count);
+        Assert.Equal(curvePda, buySwapIx.Accounts[2].PublicKey);
+        Assert.Equal(curveSolVault, buySwapIx.Accounts[3].PublicKey);
+        Assert.Equal(curveTokenVault, buySwapIx.Accounts[4].PublicKey);
         Assert.Equal(PlemuMarketTransactionBuilder.SwapBuyDiscriminator, buySwapIx.Data.AsSpan(0, 8).ToArray());
 
         // Step 6: Player holds tokens during secondary license wave and sells for profit (swap_sell)
@@ -697,6 +700,8 @@ public class MonetizationEndToEndTests
 
         var sellQuote = await curveService.GetSellQuoteAsync(gameTokenMint, buyQuote.OutAmount, slippageBasisPoints: 100);
         Assert.True(sellQuote.OutAmount > 0);
+        Assert.True(sellQuote.OutAmount > solSwapIn,
+            $"Expected profit from holding tokens during 200 license sales: sold for {sellQuote.OutAmount} lamports > initial {solSwapIn} lamports");
 
         var sellSwapIx = curveService.BuildSellSwapInstruction(
             seller: playerWallet,
@@ -706,6 +711,9 @@ public class MonetizationEndToEndTests
             minSolOut: sellQuote.MinOutAmount);
 
         Assert.Equal(8, sellSwapIx.Accounts.Count);
+        Assert.Equal(curvePda, sellSwapIx.Accounts[2].PublicKey);
+        Assert.Equal(curveSolVault, sellSwapIx.Accounts[3].PublicKey);
+        Assert.Equal(curveTokenVault, sellSwapIx.Accounts[4].PublicKey);
         Assert.Equal(PlemuMarketTransactionBuilder.SwapSellDiscriminator, sellSwapIx.Data.AsSpan(0, 8).ToArray());
     }
 
