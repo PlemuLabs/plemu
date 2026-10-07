@@ -338,4 +338,16 @@ public class BondingCurveServiceTests
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             service.SimulateLicensePurchaseFeeInjection(state, 1_000_000UL, feeBps: 10_001UL));
     }
+
+    [Fact]
+    public async Task GetMarketDataAsync_WithCustomSymbolAndDecimals_ComputesCorrectly()
+    {
+        var service = new BondingCurveService(DefaultBondingCurvePdaDeriver.Instance, rpcClient: null);
+
+        var data = await service.GetMarketDataAsync(ValidMint, symbol: "$STAR", decimals: 9);
+
+        Assert.Equal("$STAR", data.Symbol);
+        Assert.True(data.SpotPriceLamports > 0);
+        Assert.True(data.MarketCapLamports > 0);
+    }
 }

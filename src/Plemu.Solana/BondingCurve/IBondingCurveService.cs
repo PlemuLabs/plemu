@@ -18,17 +18,17 @@ public interface IBondingCurveService
     /// <summary>
     /// Calculates a buy swap quote for depositing a given amount of SOL lamports.
     /// </summary>
-    Task<GameTokenQuote> GetBuyQuoteAsync(string mint, ulong solAmountIn, ulong slippageBasisPoints = 100, CancellationToken ct = default);
+    Task<GameTokenQuote> GetBuyQuoteAsync(string mint, ulong solAmountIn, ulong slippageBasisPoints = 100, byte decimals = 6, CancellationToken ct = default);
 
     /// <summary>
     /// Calculates a sell swap quote for depositing a given amount of base token units.
     /// </summary>
-    Task<GameTokenQuote> GetSellQuoteAsync(string mint, ulong tokenAmountIn, ulong slippageBasisPoints = 100, CancellationToken ct = default);
+    Task<GameTokenQuote> GetSellQuoteAsync(string mint, ulong tokenAmountIn, ulong slippageBasisPoints = 100, byte decimals = 6, CancellationToken ct = default);
 
     /// <summary>
     /// Retrieves market data and telemetry (spot price, market cap, reserves) for a game token.
     /// </summary>
-    Task<GameTokenMarketData> GetMarketDataAsync(string mint, CancellationToken ct = default);
+    Task<GameTokenMarketData> GetMarketDataAsync(string mint, string? symbol = null, byte decimals = 6, CancellationToken ct = default);
 
     /// <summary>
     /// Compiles a complete Anchor `swap_buy` instruction for a buyer.

@@ -179,6 +179,29 @@ public class BondingCurveMathTests
     }
 
     [Fact]
+    public void CalculateSpotPriceLamports_WithCustomDecimals_CalculatesCorrectly()
+    {
+        ulong virtualSol = 30_000_000_000UL;
+        ulong virtualTokens = 1_000_000_000_000_000UL;
+
+        // 9 decimals instead of 6: 1 token = 10^9 units
+        // P = (30_000_000_000 * 1_000_000_000) / 1_000_000_000_000_000 = 30_000 lamports
+        ulong spotPrice9 = BondingCurveMath.CalculateSpotPriceLamports(virtualSol, virtualTokens, decimals: 9);
+        Assert.Equal(30_000UL, spotPrice9);
+
+        // 0 decimals: 1 token = 1 unit
+        ulong spotPrice0 = BondingCurveMath.CalculateSpotPriceLamports(virtualSol, virtualTokens, decimals: 0);
+        Assert.Equal(0UL, spotPrice0); // integer truncation of (30B * 1) / 10^15
+    }
+
+    [Fact]
+    public void CalculateSpotPriceLamports_DecimalsAbove18_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            BondingCurveMath.CalculateSpotPriceLamports(1_000_000UL, 1_000_000UL, decimals: 19));
+    }
+
+    [Fact]
     public void InjectLiquidity_ValidFee_IncreasesReservesMonotonically()
     {
         ulong virtualSol = 30_000_000_000UL;

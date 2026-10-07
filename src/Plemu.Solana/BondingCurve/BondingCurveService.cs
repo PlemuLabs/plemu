@@ -140,6 +140,7 @@ public class BondingCurveService : IBondingCurveService
         string mint,
         ulong solAmountIn,
         ulong slippageBasisPoints = 100,
+        byte decimals = 6,
         CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfZero(solAmountIn);
@@ -150,13 +151,13 @@ public class BondingCurveService : IBondingCurveService
 
         var state = await GetStateAsync(mint, ct).ConfigureAwait(false);
 
-        ulong spotPriceBefore = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves);
+        ulong spotPriceBefore = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves, decimals);
         ulong tokensOut = BondingCurveMath.CalculateBuyTokensOut(state.VirtualSolReserves, state.VirtualTokenReserves, state.RealTokenReserves, solAmountIn);
         ulong minTokensOut = (ulong)(((UInt128)tokensOut * (10000 - slippageBasisPoints)) / 10000);
 
         ulong newSol = checked(state.VirtualSolReserves + solAmountIn);
         ulong newToken = state.VirtualTokenReserves > tokensOut ? state.VirtualTokenReserves - tokensOut : 1UL;
-        ulong spotPriceAfter = BondingCurveMath.CalculateSpotPriceLamports(newSol, newToken);
+        ulong spotPriceAfter = BondingCurveMath.CalculateSpotPriceLamports(newSol, newToken, decimals);
 
         ulong priceImpactBps = spotPriceBefore > 0 && spotPriceAfter > spotPriceBefore
             ? (ulong)(((UInt128)(spotPriceAfter - spotPriceBefore) * 10000) / spotPriceBefore)
@@ -178,6 +179,7 @@ public class BondingCurveService : IBondingCurveService
         string mint,
         ulong tokenAmountIn,
         ulong slippageBasisPoints = 100,
+        byte decimals = 6,
         CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfZero(tokenAmountIn);
@@ -188,13 +190,13 @@ public class BondingCurveService : IBondingCurveService
 
         var state = await GetStateAsync(mint, ct).ConfigureAwait(false);
 
-        ulong spotPriceBefore = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves);
+        ulong spotPriceBefore = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves, decimals);
         ulong solOut = BondingCurveMath.CalculateSellSolOut(state.VirtualSolReserves, state.VirtualTokenReserves, state.RealSolReserves, tokenAmountIn);
         ulong minSolOut = (ulong)(((UInt128)solOut * (10000 - slippageBasisPoints)) / 10000);
 
         ulong newTokens = checked(state.VirtualTokenReserves + tokenAmountIn);
         ulong newSol = state.VirtualSolReserves > solOut ? state.VirtualSolReserves - solOut : 1UL;
-        ulong spotPriceAfter = BondingCurveMath.CalculateSpotPriceLamports(newSol, newTokens);
+        ulong spotPriceAfter = BondingCurveMath.CalculateSpotPriceLamports(newSol, newTokens, decimals);
 
         ulong priceImpactBps = spotPriceBefore > 0 && spotPriceBefore > spotPriceAfter
             ? (ulong)(((UInt128)(spotPriceBefore - spotPriceAfter) * 10000) / spotPriceBefore)
@@ -212,15 +214,28 @@ public class BondingCurveService : IBondingCurveService
             PriceImpactBps: priceImpactBps);
     }
 
-    public async Task<GameTokenMarketData> GetMarketDataAsync(string mint, CancellationToken ct = default)
+    public async Task<GameTokenMarketData> GetMarketDataAsync(
+        string mint,
+        string? symbol = null,
+        byte decimals = 6,
+        CancellationToken ct = default)
     {
         var state = await GetStateAsync(mint, ct).ConfigureAwait(false);
-        ulong spotPrice = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves);
-        ulong marketCap = checked((ulong)(((UInt128)spotPrice * (state.TotalSupply / 1_000_000UL))));
+        ulong spotPrice = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves, decimals);
+
+        UInt128 unitMultiplier = 1;
+        for (int i = 0; i < decimals; i++)
+        {
+            unitMultiplier *= 10;
+        }
+
+        ulong marketCap = unitMultiplier > 0
+            ? checked((ulong)(((UInt128)spotPrice * state.TotalSupply) / unitMultiplier))
+            : 0UL;
 
         return new GameTokenMarketData(
             Mint: mint,
-            Symbol: "PLAY",
+            Symbol: string.IsNullOrWhiteSpace(symbol) ? "PLAY" : symbol,
             SpotPriceLamports: spotPrice,
             MarketCapLamports: marketCap,
             VirtualSolReserves: state.VirtualSolReserves,

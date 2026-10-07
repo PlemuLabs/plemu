@@ -124,12 +124,23 @@ public static class BondingCurveMath
     /// <exception cref="ArgumentOutOfRangeException">Thrown if virtualSolReserves or virtualTokenReserves is zero.</exception>
     public static ulong CalculateSpotPriceLamports(
         ulong virtualSolReserves,
-        ulong virtualTokenReserves)
+        ulong virtualTokenReserves,
+        byte decimals = 6)
     {
         ArgumentOutOfRangeException.ThrowIfZero(virtualSolReserves);
         ArgumentOutOfRangeException.ThrowIfZero(virtualTokenReserves);
+        if (decimals > 18)
+        {
+            throw new ArgumentOutOfRangeException(nameof(decimals), decimals, "Token decimals cannot exceed 18.");
+        }
 
-        UInt128 numerator = (UInt128)virtualSolReserves * 1_000_000UL;
+        UInt128 unitMultiplier = 1;
+        for (int i = 0; i < decimals; i++)
+        {
+            unitMultiplier *= 10;
+        }
+
+        UInt128 numerator = (UInt128)virtualSolReserves * unitMultiplier;
         UInt128 price = numerator / virtualTokenReserves;
 
         return checked((ulong)price);
