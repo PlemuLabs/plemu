@@ -24,11 +24,17 @@ public static class PlemuMarketTransactionBuilder
     private const string AnchorGlobalPrefix = "global:";
     private const string BuyLicenseMethod = "buy_license";
     private const string SendTipMethod = "send_tip";
+    private const string SwapBuyMethod = "swap_buy";
+    private const string SwapSellMethod = "swap_sell";
+    private const string InitializeBondingCurveMethod = "initialize_bonding_curve";
     private const string PdaMarker = "ProgramDerivedAddress";
     private const string InvalidBase58Error = "Public key must be a valid 32-byte Base58 string.";
 
     public static byte[] BuyLicenseDiscriminator { get; } = ComputeAnchorDiscriminator(BuyLicenseMethod);
     public static byte[] SendTipDiscriminator { get; } = ComputeAnchorDiscriminator(SendTipMethod);
+    public static byte[] SwapBuyDiscriminator { get; } = ComputeAnchorDiscriminator(SwapBuyMethod);
+    public static byte[] SwapSellDiscriminator { get; } = ComputeAnchorDiscriminator(SwapSellMethod);
+    public static byte[] InitializeBondingCurveDiscriminator { get; } = ComputeAnchorDiscriminator(InitializeBondingCurveMethod);
 
     public static byte[] ComputeAnchorDiscriminator(string instructionName)
     {
@@ -212,6 +218,130 @@ public static class PlemuMarketTransactionBuilder
         };
 
         byte[] data = BuildSendTipData(amount, MarketCurrency.Usdc, tipToPlatform);
+        return new SolanaInstruction(programId, accounts, data);
+    }
+
+    public static byte[] BuildSwapBuyData(ulong solAmount, ulong minTokensOut)
+    {
+        ArgumentOutOfRangeException.ThrowIfZero(solAmount);
+
+        byte[] data = new byte[24];
+        Array.Copy(SwapBuyDiscriminator, 0, data, 0, 8);
+        BitConverter.TryWriteBytes(data.AsSpan(8, 8), solAmount);
+        BitConverter.TryWriteBytes(data.AsSpan(16, 8), minTokensOut);
+        return data;
+    }
+
+    public static byte[] BuildSwapSellData(ulong tokenAmount, ulong minSolOut)
+    {
+        ArgumentOutOfRangeException.ThrowIfZero(tokenAmount);
+
+        byte[] data = new byte[24];
+        Array.Copy(SwapSellDiscriminator, 0, data, 0, 8);
+        BitConverter.TryWriteBytes(data.AsSpan(8, 8), tokenAmount);
+        BitConverter.TryWriteBytes(data.AsSpan(16, 8), minSolOut);
+        return data;
+    }
+
+    public static SolanaInstruction BuildSwapBuyInstruction(
+        string buyer,
+        string mint,
+        string bondingCurve,
+        string curveSolVault,
+        string curveTokenVault,
+        string buyerTokenAccount,
+        ulong solAmount,
+        ulong minTokensOut,
+        string? marketProgramId = null,
+        string? tokenProgramId = null,
+        string? systemProgramId = null)
+    {
+        ArgumentNullException.ThrowIfNull(buyer);
+        ArgumentNullException.ThrowIfNull(mint);
+        ArgumentNullException.ThrowIfNull(bondingCurve);
+        ArgumentNullException.ThrowIfNull(curveSolVault);
+        ArgumentNullException.ThrowIfNull(curveTokenVault);
+        ArgumentNullException.ThrowIfNull(buyerTokenAccount);
+
+        ValidateBase58(buyer, nameof(buyer));
+        ValidateBase58(mint, nameof(mint));
+        ValidateBase58(bondingCurve, nameof(bondingCurve));
+        ValidateBase58(curveSolVault, nameof(curveSolVault));
+        ValidateBase58(curveTokenVault, nameof(curveTokenVault));
+        ValidateBase58(buyerTokenAccount, nameof(buyerTokenAccount));
+
+        string programId = marketProgramId ?? DefaultMarketProgramId;
+        string tokenProgId = tokenProgramId ?? DefaultTokenProgramId;
+        string systemProgId = systemProgramId ?? DefaultSystemProgramId;
+
+        ValidateBase58(programId, nameof(marketProgramId));
+        ValidateBase58(tokenProgId, nameof(tokenProgramId));
+        ValidateBase58(systemProgId, nameof(systemProgramId));
+
+        var accounts = new List<SolanaAccountMeta>
+        {
+            new(buyer, IsSigner: true, IsWritable: true),
+            new(mint, IsSigner: false, IsWritable: false),
+            new(bondingCurve, IsSigner: false, IsWritable: true),
+            new(curveSolVault, IsSigner: false, IsWritable: true),
+            new(curveTokenVault, IsSigner: false, IsWritable: true),
+            new(buyerTokenAccount, IsSigner: false, IsWritable: true),
+            new(tokenProgId, IsSigner: false, IsWritable: false),
+            new(systemProgId, IsSigner: false, IsWritable: false)
+        };
+
+        byte[] data = BuildSwapBuyData(solAmount, minTokensOut);
+        return new SolanaInstruction(programId, accounts, data);
+    }
+
+    public static SolanaInstruction BuildSwapSellInstruction(
+        string seller,
+        string mint,
+        string bondingCurve,
+        string curveSolVault,
+        string curveTokenVault,
+        string sellerTokenAccount,
+        ulong tokenAmount,
+        ulong minSolOut,
+        string? marketProgramId = null,
+        string? tokenProgramId = null,
+        string? systemProgramId = null)
+    {
+        ArgumentNullException.ThrowIfNull(seller);
+        ArgumentNullException.ThrowIfNull(mint);
+        ArgumentNullException.ThrowIfNull(bondingCurve);
+        ArgumentNullException.ThrowIfNull(curveSolVault);
+        ArgumentNullException.ThrowIfNull(curveTokenVault);
+        ArgumentNullException.ThrowIfNull(sellerTokenAccount);
+
+        ValidateBase58(seller, nameof(seller));
+        ValidateBase58(mint, nameof(mint));
+        ValidateBase58(bondingCurve, nameof(bondingCurve));
+        ValidateBase58(curveSolVault, nameof(curveSolVault));
+        ValidateBase58(curveTokenVault, nameof(curveTokenVault));
+        ValidateBase58(sellerTokenAccount, nameof(sellerTokenAccount));
+
+        string programId = marketProgramId ?? DefaultMarketProgramId;
+        string tokenProgId = tokenProgramId ?? DefaultTokenProgramId;
+        string systemProgId = systemProgramId ?? DefaultSystemProgramId;
+
+        ValidateBase58(programId, nameof(marketProgramId));
+        ValidateBase58(tokenProgId, nameof(tokenProgramId));
+        ValidateBase58(systemProgId, nameof(systemProgramId));
+
+        var accounts = new List<SolanaAccountMeta>
+        {
+            new(seller, IsSigner: true, IsWritable: true),
+            new(mint, IsSigner: false, IsWritable: false),
+            new(bondingCurve, IsSigner: false, IsWritable: true),
+            new(curveSolVault, IsSigner: false, IsWritable: true),
+            new(curveTokenVault, IsSigner: false, IsWritable: true),
+            new(sellerTokenAccount, IsSigner: false, IsWritable: true),
+            new(tokenProgId, IsSigner: false, IsWritable: false),
+            new(systemProgId, IsSigner: false, IsWritable: false)
+        };
+
+        byte[] data = BuildSwapSellData(tokenAmount, minSolOut);
         return new SolanaInstruction(programId, accounts, data);
     }
 

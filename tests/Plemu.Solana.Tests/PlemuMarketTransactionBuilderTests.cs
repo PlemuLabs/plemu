@@ -777,4 +777,344 @@ public class PlemuMarketTransactionBuilderTests
         Assert.NotNull(tx.Signatures);
         Assert.Single(tx.Signatures);
     }
+
+    [Fact]
+    public void SwapDiscriminators_MatchAnchorStandards()
+    {
+        Assert.Equal(8, PlemuMarketTransactionBuilder.SwapBuyDiscriminator.Length);
+        Assert.Equal(8, PlemuMarketTransactionBuilder.SwapSellDiscriminator.Length);
+        Assert.Equal(8, PlemuMarketTransactionBuilder.InitializeBondingCurveDiscriminator.Length);
+
+        var expectedBuy = SHA256.HashData(Encoding.UTF8.GetBytes("global:swap_buy")).Take(8).ToArray();
+        var expectedSell = SHA256.HashData(Encoding.UTF8.GetBytes("global:swap_sell")).Take(8).ToArray();
+        var expectedInit = SHA256.HashData(Encoding.UTF8.GetBytes("global:initialize_bonding_curve")).Take(8).ToArray();
+
+        Assert.Equal(expectedBuy, PlemuMarketTransactionBuilder.SwapBuyDiscriminator);
+        Assert.Equal(expectedSell, PlemuMarketTransactionBuilder.SwapSellDiscriminator);
+        Assert.Equal(expectedInit, PlemuMarketTransactionBuilder.InitializeBondingCurveDiscriminator);
+    }
+
+    [Fact]
+    public void BuildSwapBuyData_Serializes24BytesLittleEndian()
+    {
+        ulong solAmount = 1_500_000_000UL;
+        ulong minTokensOut = 450_000_000UL;
+
+        byte[] data = PlemuMarketTransactionBuilder.BuildSwapBuyData(solAmount, minTokensOut);
+
+        Assert.Equal(24, data.Length);
+        Assert.Equal(PlemuMarketTransactionBuilder.SwapBuyDiscriminator, data.Take(8).ToArray());
+        Assert.Equal(solAmount, BitConverter.ToUInt64(data, 8));
+        Assert.Equal(minTokensOut, BitConverter.ToUInt64(data, 16));
+    }
+
+    [Fact]
+    public void BuildSwapBuyData_ZeroSolAmount_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PlemuMarketTransactionBuilder.BuildSwapBuyData(0UL, 100_000UL));
+    }
+
+    [Fact]
+    public void BuildSwapSellData_Serializes24BytesLittleEndian()
+    {
+        ulong tokenAmount = 50_000_000_000UL;
+        ulong minSolOut = 800_000_000UL;
+
+        byte[] data = PlemuMarketTransactionBuilder.BuildSwapSellData(tokenAmount, minSolOut);
+
+        Assert.Equal(24, data.Length);
+        Assert.Equal(PlemuMarketTransactionBuilder.SwapSellDiscriminator, data.Take(8).ToArray());
+        Assert.Equal(tokenAmount, BitConverter.ToUInt64(data, 8));
+        Assert.Equal(minSolOut, BitConverter.ToUInt64(data, 16));
+    }
+
+    [Fact]
+    public void BuildSwapSellData_ZeroTokenAmount_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PlemuMarketTransactionBuilder.BuildSwapSellData(0UL, 100_000UL));
+    }
+
+    [Fact]
+    public void BuildSwapBuyInstruction_OrdersAccountsStrictly()
+    {
+        string buyer = ValidBuyer;
+        string mint = ValidUsdcMint;
+        string bondingCurve = ValidReceipt;
+        string curveSolVault = ValidTreasury;
+        string curveTokenVault = ValidSplitsVault;
+        string buyerTokenAccount = ValidBlockhash;
+        ulong solAmount = 2_000_000_000UL;
+        ulong minTokensOut = 100_000UL;
+
+        var ix = PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            buyer: buyer,
+            mint: mint,
+            bondingCurve: bondingCurve,
+            curveSolVault: curveSolVault,
+            curveTokenVault: curveTokenVault,
+            buyerTokenAccount: buyerTokenAccount,
+            solAmount: solAmount,
+            minTokensOut: minTokensOut,
+            marketProgramId: CustomProgramId);
+
+        Assert.Equal(CustomProgramId, ix.ProgramId);
+        Assert.Equal(8, ix.Accounts.Count);
+
+        // 1. buyer (signer, writable)
+        Assert.Equal(buyer, ix.Accounts[0].PublicKey);
+        Assert.True(ix.Accounts[0].IsSigner);
+        Assert.True(ix.Accounts[0].IsWritable);
+
+        // 2. mint (readonly)
+        Assert.Equal(mint, ix.Accounts[1].PublicKey);
+        Assert.False(ix.Accounts[1].IsSigner);
+        Assert.False(ix.Accounts[1].IsWritable);
+
+        // 3. bondingCurve (writable)
+        Assert.Equal(bondingCurve, ix.Accounts[2].PublicKey);
+        Assert.False(ix.Accounts[2].IsSigner);
+        Assert.True(ix.Accounts[2].IsWritable);
+
+        // 4. curveSolVault (writable)
+        Assert.Equal(curveSolVault, ix.Accounts[3].PublicKey);
+        Assert.False(ix.Accounts[3].IsSigner);
+        Assert.True(ix.Accounts[3].IsWritable);
+
+        // 5. curveTokenVault (writable)
+        Assert.Equal(curveTokenVault, ix.Accounts[4].PublicKey);
+        Assert.False(ix.Accounts[4].IsSigner);
+        Assert.True(ix.Accounts[4].IsWritable);
+
+        // 6. buyerTokenAccount (writable)
+        Assert.Equal(buyerTokenAccount, ix.Accounts[5].PublicKey);
+        Assert.False(ix.Accounts[5].IsSigner);
+        Assert.True(ix.Accounts[5].IsWritable);
+
+        // 7. tokenProgram (readonly)
+        Assert.Equal(PlemuMarketTransactionBuilder.DefaultTokenProgramId, ix.Accounts[6].PublicKey);
+        Assert.False(ix.Accounts[6].IsSigner);
+        Assert.False(ix.Accounts[6].IsWritable);
+
+        // 8. systemProgram (readonly)
+        Assert.Equal(SolanaEntitlementOptions.DefaultSystemProgramId, ix.Accounts[7].PublicKey);
+        Assert.False(ix.Accounts[7].IsSigner);
+        Assert.False(ix.Accounts[7].IsWritable);
+
+        // Data payload
+        Assert.Equal(24, ix.Data.Length);
+        Assert.Equal(PlemuMarketTransactionBuilder.SwapBuyDiscriminator, ix.Data.Take(8).ToArray());
+        Assert.Equal(solAmount, BitConverter.ToUInt64(ix.Data, 8));
+        Assert.Equal(minTokensOut, BitConverter.ToUInt64(ix.Data, 16));
+    }
+
+    [Fact]
+    public void BuildSwapBuyInstruction_CustomPrograms_UsesProvidedProgramIds()
+    {
+        string customTokenProg = "4PEcHxY379hy7BzJRvdqcKgFgXBf1FuPDBS47bm81JBL";
+        string customSystemProg = "95EuhxN4dM1EecYhJdGg5sZkR1pGg5sZkR1pGg5sZkR1";
+
+        var ix = PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            buyer: ValidBuyer,
+            mint: ValidUsdcMint,
+            bondingCurve: ValidReceipt,
+            curveSolVault: ValidTreasury,
+            curveTokenVault: ValidSplitsVault,
+            buyerTokenAccount: ValidBlockhash,
+            solAmount: 1_000_000UL,
+            minTokensOut: 50_000UL,
+            tokenProgramId: customTokenProg,
+            systemProgramId: customSystemProg);
+
+        Assert.Equal(PlemuMarketTransactionBuilder.DefaultMarketProgramId, ix.ProgramId);
+        Assert.Equal(customTokenProg, ix.Accounts[6].PublicKey);
+        Assert.Equal(customSystemProg, ix.Accounts[7].PublicKey);
+    }
+
+    [Fact]
+    public void BuildSwapSellInstruction_OrdersAccountsStrictly()
+    {
+        string seller = ValidBuyer;
+        string mint = ValidUsdcMint;
+        string bondingCurve = ValidReceipt;
+        string curveSolVault = ValidTreasury;
+        string curveTokenVault = ValidSplitsVault;
+        string sellerTokenAccount = ValidBlockhash;
+        ulong tokenAmount = 500_000UL;
+        ulong minSolOut = 1_000_000UL;
+
+        var ix = PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            seller: seller,
+            mint: mint,
+            bondingCurve: bondingCurve,
+            curveSolVault: curveSolVault,
+            curveTokenVault: curveTokenVault,
+            sellerTokenAccount: sellerTokenAccount,
+            tokenAmount: tokenAmount,
+            minSolOut: minSolOut,
+            marketProgramId: CustomProgramId);
+
+        Assert.Equal(CustomProgramId, ix.ProgramId);
+        Assert.Equal(8, ix.Accounts.Count);
+
+        // 1. seller (signer, writable)
+        Assert.Equal(seller, ix.Accounts[0].PublicKey);
+        Assert.True(ix.Accounts[0].IsSigner);
+        Assert.True(ix.Accounts[0].IsWritable);
+
+        // 2. mint (readonly)
+        Assert.Equal(mint, ix.Accounts[1].PublicKey);
+        Assert.False(ix.Accounts[1].IsSigner);
+        Assert.False(ix.Accounts[1].IsWritable);
+
+        // 3. bondingCurve (writable)
+        Assert.Equal(bondingCurve, ix.Accounts[2].PublicKey);
+        Assert.False(ix.Accounts[2].IsSigner);
+        Assert.True(ix.Accounts[2].IsWritable);
+
+        // 4. curveSolVault (writable)
+        Assert.Equal(curveSolVault, ix.Accounts[3].PublicKey);
+        Assert.False(ix.Accounts[3].IsSigner);
+        Assert.True(ix.Accounts[3].IsWritable);
+
+        // 5. curveTokenVault (writable)
+        Assert.Equal(curveTokenVault, ix.Accounts[4].PublicKey);
+        Assert.False(ix.Accounts[4].IsSigner);
+        Assert.True(ix.Accounts[4].IsWritable);
+
+        // 6. sellerTokenAccount (writable)
+        Assert.Equal(sellerTokenAccount, ix.Accounts[5].PublicKey);
+        Assert.False(ix.Accounts[5].IsSigner);
+        Assert.True(ix.Accounts[5].IsWritable);
+
+        // 7. tokenProgram (readonly)
+        Assert.Equal(PlemuMarketTransactionBuilder.DefaultTokenProgramId, ix.Accounts[6].PublicKey);
+        Assert.False(ix.Accounts[6].IsSigner);
+        Assert.False(ix.Accounts[6].IsWritable);
+
+        // 8. systemProgram (readonly)
+        Assert.Equal(SolanaEntitlementOptions.DefaultSystemProgramId, ix.Accounts[7].PublicKey);
+        Assert.False(ix.Accounts[7].IsSigner);
+        Assert.False(ix.Accounts[7].IsWritable);
+
+        // Data payload
+        Assert.Equal(24, ix.Data.Length);
+        Assert.Equal(PlemuMarketTransactionBuilder.SwapSellDiscriminator, ix.Data.Take(8).ToArray());
+        Assert.Equal(tokenAmount, BitConverter.ToUInt64(ix.Data, 8));
+        Assert.Equal(minSolOut, BitConverter.ToUInt64(ix.Data, 16));
+    }
+
+    [Fact]
+    public void BuildSwapSellInstruction_CustomPrograms_UsesProvidedProgramIds()
+    {
+        string customTokenProg = "4PEcHxY379hy7BzJRvdqcKgFgXBf1FuPDBS47bm81JBL";
+        string customSystemProg = "95EuhxN4dM1EecYhJdGg5sZkR1pGg5sZkR1pGg5sZkR1";
+
+        var ix = PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            seller: ValidBuyer,
+            mint: ValidUsdcMint,
+            bondingCurve: ValidReceipt,
+            curveSolVault: ValidTreasury,
+            curveTokenVault: ValidSplitsVault,
+            sellerTokenAccount: ValidBlockhash,
+            tokenAmount: 250_000UL,
+            minSolOut: 50_000UL,
+            tokenProgramId: customTokenProg,
+            systemProgramId: customSystemProg);
+
+        Assert.Equal(PlemuMarketTransactionBuilder.DefaultMarketProgramId, ix.ProgramId);
+        Assert.Equal(customTokenProg, ix.Accounts[6].PublicKey);
+        Assert.Equal(customSystemProg, ix.Accounts[7].PublicKey);
+    }
+
+    [Fact]
+    public void BuildSwapInstruction_NullGuards_ThrowArgumentNullException()
+    {
+        // BuildSwapBuyInstruction null guards
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            null!, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, null!, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, null!, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, null!, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, null!, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, null!, 1000, 1000));
+
+        // BuildSwapSellInstruction null guards
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            null!, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, null!, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, null!, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, null!, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, null!, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentNullException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, null!, 1000, 1000));
+    }
+
+    [Fact]
+    public void BuildSwapInstruction_Base58Validation_ThrowsOnInvalidAddresses()
+    {
+        string invalid = "invalid-base-58-key";
+
+        // BuildSwapBuyInstruction base58 invalid
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            invalid, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, invalid, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, invalid, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, invalid, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, invalid, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, invalid, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000, marketProgramId: invalid));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000, tokenProgramId: invalid));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000, systemProgramId: invalid));
+
+        // BuildSwapSellInstruction base58 invalid
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            invalid, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, invalid, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, invalid, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, invalid, ValidSplitsVault, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, invalid, ValidBlockhash, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, invalid, 1000, 1000));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000, marketProgramId: invalid));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000, tokenProgramId: invalid));
+        Assert.Throws<ArgumentException>(() => PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+            ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 1000, 1000, systemProgramId: invalid));
+    }
+
+    [Fact]
+    public void BuildSwapInstruction_ZeroInputAmount_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PlemuMarketTransactionBuilder.BuildSwapBuyInstruction(
+                ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 0UL, 1000UL));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PlemuMarketTransactionBuilder.BuildSwapSellInstruction(
+                ValidBuyer, ValidUsdcMint, ValidReceipt, ValidTreasury, ValidSplitsVault, ValidBlockhash, 0UL, 1000UL));
+    }
 }

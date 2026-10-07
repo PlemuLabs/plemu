@@ -12,6 +12,7 @@ using Plemu.Content;
 using Plemu.Core;
 using Plemu.Core.Abstractions;
 using Plemu.Core.Models;
+using Plemu.Solana.BondingCurve;
 using Plemu.Solana.Cryptography;
 using Xunit;
 
@@ -575,6 +576,145 @@ public class MonetizationEndToEndTests
 
         // 3. Assert
         Assert.False(entitled);
+    }
+
+    [Fact]
+    public async Task FullLifecycle_GameLicensePurchase_InjectsBondingCurveLiquidity_AppreciatesTokenPrice_AndAllowsTrading()
+    {
+        // 1. Arrange Hardware Wallet, RPC, and Services
+        string gameTokenMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+        string playerWallet = BuyerPubkey;
+        string playerTokenAccount = "95EuhxN4dM1EecYhJdGg5sZkR1pGg5sZkR1pGg5sZkR1";
+
+        var rpcClient = new MockSolanaRpcClient();
+        var deriver = DefaultBondingCurvePdaDeriver.Instance;
+        var receiptDeriver = new DefaultReceiptPdaDeriver();
+        var curveService = new BondingCurveService(deriver, rpcClient);
+
+        // Derive PDAs
+        var (curvePda, curveBump) = deriver.DeriveBondingCurveAddress(gameTokenMint);
+        var (curveSolVault, _) = deriver.DeriveCurveSolVaultAddress(gameTokenMint);
+        var (curveTokenVault, _) = deriver.DeriveCurveTokenVaultAddress(gameTokenMint);
+
+        // Setup Genesis State on-chain in mock RPC
+        var genesisState = new BondingCurveState(
+            Mint: gameTokenMint,
+            VirtualSolReserves: 30_000_000_000UL,     // 30 SOL
+            VirtualTokenReserves: 1_073_000_000_000_000UL, // ~1.073B tokens
+            RealSolReserves: 0UL,
+            RealTokenReserves: 793_100_000_000_000UL, // ~793.1M tokens
+            TotalSupply: 1_000_000_000_000_000UL,     // 1B tokens
+            IsComplete: false,
+            Bump: curveBump);
+
+        rpcClient.AccountMap[curvePda] = new SolanaAccountInfo(
+            Owner: PlemuMarketTransactionBuilder.DefaultMarketProgramId,
+            Data: BondingCurveService.SerializeAccountData(genesisState),
+            Lamports: 1_000_000_000UL);
+
+        // Step 1: Market Telemetry Inquiry (before licenses sold)
+        var initialMarketData = await curveService.GetMarketDataAsync(gameTokenMint);
+        Assert.Equal(gameTokenMint, initialMarketData.Mint);
+        ulong initialSpotPrice = initialMarketData.SpotPriceLamports;
+        Assert.True(initialSpotPrice > 0);
+
+        // Step 2: Player purchases Game License for 0.05 SOL (50,000,000 lamports)
+        ulong licensePrice = 50_000_000UL;
+        string sha256Hex = new string('e', 64);
+        string receiptPda = receiptDeriver.DeriveReceiptAddress(
+            PlemuMarketTransactionBuilder.DefaultMarketProgramId,
+            sha256Hex,
+            playerWallet);
+
+        var buyLicenseIx = PlemuMarketTransactionBuilder.BuildBuyLicenseSolInstruction(
+            buyer: playerWallet,
+            receipt: receiptPda,
+            treasury: TreasuryPubkey,
+            splitsVault: SplitsVaultPubkey,
+            amount: licensePrice);
+
+        Assert.Equal(PlemuMarketTransactionBuilder.DefaultMarketProgramId, buyLicenseIx.ProgramId);
+        Assert.Equal(25, buyLicenseIx.Data.Length);
+
+        // Write receipt to mock RPC to entitle player
+        rpcClient.AccountMap[receiptPda] = new SolanaAccountInfo(
+            Owner: PlemuMarketTransactionBuilder.DefaultMarketProgramId,
+            Data: CreateReceiptAccountData(playerWallet, sha256Hex, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), licensePrice, 0, false),
+            Lamports: 10_000_000UL);
+
+        var entitlementService = new SolanaEntitlementService(rpcClient, receiptPdaDeriver: receiptDeriver);
+        bool isEntitled = await entitlementService.CanAccessEntryAsync(new WalletIdentity(playerWallet), sha256Hex);
+        Assert.True(isEntitled);
+
+        // Step 3: Automatic 25% Fee Injection from License Purchase into Bonding Curve Pool
+        // 25% of 50M lamports = 12,500,000 lamports directly added to pool reserves without minting tokens
+        var stateAfterOneLicense = curveService.SimulateLicensePurchaseFeeInjection(genesisState, licensePrice, feeBps: 2500);
+        Assert.Equal(genesisState.RealSolReserves + 12_500_000UL, stateAfterOneLicense.RealSolReserves);
+        Assert.Equal(genesisState.VirtualSolReserves + 12_500_000UL, stateAfterOneLicense.VirtualSolReserves);
+        Assert.Equal(genesisState.VirtualTokenReserves, stateAfterOneLicense.VirtualTokenReserves); // Zero dilution
+
+        // Step 4: Rapid platform expansion (100 additional copies sold by other players)
+        // 100 * 0.05 SOL = 5 SOL total; 25% fee injection = 1.25 SOL (1,250,000,000 lamports)
+        ulong totalBatchSales = 100UL * licensePrice;
+        var stateAfterExpansion = curveService.SimulateLicensePurchaseFeeInjection(genesisState, totalBatchSales, feeBps: 2500);
+
+        // Update on-chain curve account with appreciated reserves
+        rpcClient.AccountMap[curvePda] = new SolanaAccountInfo(
+            Owner: PlemuMarketTransactionBuilder.DefaultMarketProgramId,
+            Data: BondingCurveService.SerializeAccountData(stateAfterExpansion),
+            Lamports: 2_250_000_000UL);
+
+        var expandedMarketData = await curveService.GetMarketDataAsync(gameTokenMint);
+        Assert.True(expandedMarketData.SpotPriceLamports > initialSpotPrice,
+            $"Expected appreciated spot price ({expandedMarketData.SpotPriceLamports}) to exceed initial spot price ({initialSpotPrice})");
+
+        // Step 5: Player enters market, buying game tokens via MWA (swap_buy)
+        ulong solSwapIn = 1_000_000_000UL; // 1 SOL
+        var buyQuote = await curveService.GetBuyQuoteAsync(gameTokenMint, solSwapIn, slippageBasisPoints: 100);
+
+        Assert.True(buyQuote.OutAmount > 0);
+        Assert.True(buyQuote.MinOutAmount <= buyQuote.OutAmount);
+        Assert.True(buyQuote.PriceImpactBps > 0);
+
+        var buySwapIx = curveService.BuildBuySwapInstruction(
+            buyer: playerWallet,
+            mint: gameTokenMint,
+            buyerTokenAccount: playerTokenAccount,
+            solAmountIn: solSwapIn,
+            minTokensOut: buyQuote.MinOutAmount);
+
+        Assert.Equal(8, buySwapIx.Accounts.Count);
+        Assert.Equal(curvePda, buySwapIx.Accounts[2].PublicKey);
+        Assert.Equal(curveSolVault, buySwapIx.Accounts[3].PublicKey);
+        Assert.Equal(curveTokenVault, buySwapIx.Accounts[4].PublicKey);
+        Assert.Equal(PlemuMarketTransactionBuilder.SwapBuyDiscriminator, buySwapIx.Data.AsSpan(0, 8).ToArray());
+
+        // Step 6: Player holds tokens during secondary license wave and sells for profit (swap_sell)
+        ulong secondWaveSales = 200UL * licensePrice; // 200 more licenses
+        var stateAfterSecondWave = curveService.SimulateLicensePurchaseFeeInjection(stateAfterExpansion, secondWaveSales, feeBps: 2500);
+
+        rpcClient.AccountMap[curvePda] = new SolanaAccountInfo(
+            Owner: PlemuMarketTransactionBuilder.DefaultMarketProgramId,
+            Data: BondingCurveService.SerializeAccountData(stateAfterSecondWave),
+            Lamports: 3_500_000_000UL);
+
+        var sellQuote = await curveService.GetSellQuoteAsync(gameTokenMint, buyQuote.OutAmount, slippageBasisPoints: 100);
+        Assert.True(sellQuote.OutAmount > 0);
+        Assert.True(sellQuote.OutAmount > solSwapIn,
+            $"Expected profit from holding tokens during 200 license sales: sold for {sellQuote.OutAmount} lamports > initial {solSwapIn} lamports");
+
+        var sellSwapIx = curveService.BuildSellSwapInstruction(
+            seller: playerWallet,
+            mint: gameTokenMint,
+            sellerTokenAccount: playerTokenAccount,
+            tokenAmountIn: buyQuote.OutAmount,
+            minSolOut: sellQuote.MinOutAmount);
+
+        Assert.Equal(8, sellSwapIx.Accounts.Count);
+        Assert.Equal(curvePda, sellSwapIx.Accounts[2].PublicKey);
+        Assert.Equal(curveSolVault, sellSwapIx.Accounts[3].PublicKey);
+        Assert.Equal(curveTokenVault, sellSwapIx.Accounts[4].PublicKey);
+        Assert.Equal(PlemuMarketTransactionBuilder.SwapSellDiscriminator, sellSwapIx.Data.AsSpan(0, 8).ToArray());
     }
 
     #region Helpers and In-Memory Mocks
