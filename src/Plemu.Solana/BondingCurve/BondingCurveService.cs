@@ -15,7 +15,7 @@ public class BondingCurveService : IBondingCurveService
     private const string AnchorAccountPrefix = "account:";
     private const string AccountName = "BondingCurve";
     public const int AccountDataLength = 50;
-    public const int MinAccountDataLength = 42;
+    public const int MinAccountDataLength = 48;
 
     public const ulong DefaultVirtualSol = 30_000_000_000UL; // 30 SOL
     public const ulong DefaultVirtualTokens = 1_073_000_000_000_000UL; // ~1.073B base units
@@ -216,7 +216,7 @@ public class BondingCurveService : IBondingCurveService
     {
         var state = await GetStateAsync(mint, ct).ConfigureAwait(false);
         ulong spotPrice = BondingCurveMath.CalculateSpotPriceLamports(state.VirtualSolReserves, state.VirtualTokenReserves);
-        ulong marketCap = (ulong)(((UInt128)spotPrice * (state.TotalSupply / 1_000_000UL)));
+        ulong marketCap = checked((ulong)(((UInt128)spotPrice * (state.TotalSupply / 1_000_000UL))));
 
         return new GameTokenMarketData(
             Mint: mint,
@@ -282,6 +282,10 @@ public class BondingCurveService : IBondingCurveService
         ulong feeBps = 2500)
     {
         ArgumentNullException.ThrowIfNull(currentState);
+        if (feeBps > 10000)
+        {
+            throw new ArgumentOutOfRangeException(nameof(feeBps), feeBps, "Fee cannot exceed 10000 basis points (100%).");
+        }
 
         ulong feeAmount = (ulong)(((UInt128)licensePriceSol * feeBps) / 10000);
         var (newVirtualSol, newRealSol) = BondingCurveMath.InjectLiquidity(

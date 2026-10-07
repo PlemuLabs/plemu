@@ -316,4 +316,26 @@ public class BondingCurveServiceTests
         var deserialized = BondingCurveService.DeserializeAccountData(serialized, ValidMint);
         Assert.Equal(state, deserialized);
     }
+
+    [Fact]
+    public void DeserializeAccountData_DataLengthBelowMinimum_ThrowsArgumentException()
+    {
+        byte[] truncatedData = new byte[47];
+        Array.Copy(BondingCurveService.AccountDiscriminator, 0, truncatedData, 0, 8);
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            BondingCurveService.DeserializeAccountData(truncatedData, ValidMint));
+
+        Assert.Contains("below minimum", ex.Message);
+    }
+
+    [Fact]
+    public void SimulateLicensePurchaseFeeInjection_ExcessiveFeeBps_ThrowsArgumentOutOfRangeException()
+    {
+        var service = new BondingCurveService(DefaultBondingCurvePdaDeriver.Instance);
+        var state = new BondingCurveState(ValidMint, 30_000_000_000UL, 1_000_000_000_000_000UL, 0UL, 800_000_000_000_000UL, 1_000_000_000_000_000UL, false, 255);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            service.SimulateLicensePurchaseFeeInjection(state, 1_000_000UL, feeBps: 10_001UL));
+    }
 }
