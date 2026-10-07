@@ -7,7 +7,7 @@
   "sha256": "3607412031c8287cf878299ce96e581e85b852dde703806343b95576fa3ff1a9",
   "sizeBytes": 32768,
   "creator": {
-    "wallet": "Dos7vSEN2rFFsinucJsaLyJ8B2EhkkcyrM6zu73rjcHa",
+    "wallet": "FLghuDFMDYYJu2DTEST1g4aHSzRQvcMukMn9MZRcF5zP",
     "displayName": "Damian Yerrick (pinobatch)"
   },
   "license": {
@@ -16,9 +16,9 @@
   },
   "attestation": {
     "role": "curator",
-    "message": "Plemu Creator Attestation v1\n\nTitle: Libbet and the Magic Floor\nSystem: gb\nSHA-256: 3607412031c8287cf878299ce96e581e85b852dde703806343b95576fa3ff1a9\nLicense: custom-attested\nStatement: I verified this work is distributed under the stated license per the linked evidence.\nWallet: Dos7vSEN2rFFsinucJsaLyJ8B2EhkkcyrM6zu73rjcHa\nTimestamp: 2026-07-13T00:00:00Z",
-    "signature": "QirFFaeWXOaEuTs50KR0kHp0qboh2caJ2lS8lLlyKMklCrEfg+41QDk6shPRMzQJFUxKNJEmAfn49FjxzhLEBw==",
-    "signedAt": "2026-07-13T00:00:00Z"
+    "message": "Plemu Creator Attestation v1\n\nTitle: Libbet and the Magic Floor\nSystem: gb\nSHA-256: 3607412031c8287cf878299ce96e581e85b852dde703806343b95576fa3ff1a9\nLicense: custom-attested\nStatement: I verified this work is distributed under the stated license per the linked evidence.\nWallet: FLghuDFMDYYJu2DTEST1g4aHSzRQvcMukMn9MZRcF5zP\nTimestamp: 2026-07-12T00:00:00Z",
+    "signature": "e1KhH+3Wfihf6tYLNJT2JdnN6rHVyjLvsCMmS0ropGeCB4VaK9gkbcpAPIP5f0AdAXVhdUOioJ17Ti0TRjGWAA==",
+    "signedAt": "2026-07-12T00:00:00Z"
   },
   "artwork": {
     "iconUrl": null,

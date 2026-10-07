@@ -61,6 +61,24 @@ jobs:
         working-directory: tools
         run: bash scripts/e2e-demo.sh
 
+  devnet-tools:
+    name: Devnet diagnostic (programs/plemu/diagnostic)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: programs/plemu/diagnostic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18"
+          cache: npm
+          cache-dependency-path: programs/plemu/diagnostic/package-lock.json
+      - name: install
+        run: npm ci
+      - name: build + test
+        run: npm test
+
   unity-editmode:
     name: Unity EditMode (needs UNITY_LICENSE secret)
     runs-on: ubuntu-latest
