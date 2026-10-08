@@ -1,0 +1,399 @@
+/* Retro Pixel-Art Overrides for @solana/wallet-adapter-react-ui */
+
+.wallet-adapter-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(8, 12, 35, 0.88);
+  backdrop-filter: blur(4px);
+  z-index: 999999 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.wallet-adapter-modal.wallet-adapter-modal-fade-in {
+  opacity: 1;
+}
+
+.wallet-adapter-modal-overlay {
+  background: rgba(4, 6, 20, 0.75) !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.wallet-adapter-modal-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem auto;
+  min-height: auto;
+  width: 100%;
+  max-width: 440px;
+  padding: 0 16px;
+  position: relative;
+  z-index: 1000000;
+}
+
+.wallet-adapter-modal-wrapper {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface, #10152f) !important;
+  border: 2px solid var(--purple, #ae66f5) !important;
+  border-radius: 0px !important;
+  box-shadow: 6px 6px 0px #040614, 0 0 24px rgba(174, 102, 245, 0.25) !important;
+  font-family: var(--body, "Space Grotesk", sans-serif);
+  color: var(--text, #f0edff);
+  padding: 24px !important;
+}
+
+.wallet-adapter-modal-wrapper .wallet-adapter-button {
+  width: 100%;
+}
+
+.wallet-adapter-modal-title {
+  font-family: var(--pixel, "Press Start 2P", monospace) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  letter-spacing: 1px !important;
+  color: var(--text, #f0edff) !important;
+  text-shadow: 2px 2px var(--purple, #ae66f5);
+  text-align: center;
+  margin: 0 0 16px 0 !important;
+  padding: 8px 36px 16px 0 !important;
+  border-bottom: 2px solid var(--line, #30375d) !important;
+}
+
+@media (max-width: 480px) {
+  .wallet-adapter-modal-title {
+    font-size: 12px !important;
+  }
+}
+
+.wallet-adapter-modal-button-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  cursor: pointer;
+  background: var(--bg, #080c23) !important;
+  border: 2px solid var(--line, #30375d) !important;
+  border-radius: 0px !important;
+  box-shadow: 2px 2px 0px #000;
+  transition: all 0.15s ease;
+}
+
+.wallet-adapter-modal-button-close svg {
+  fill: var(--text, #f0edff) !important;
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s ease;
+}
+
+.wallet-adapter-modal-button-close:hover {
+  background: #191f42 !important;
+  border-color: var(--mint, #21eeb8) !important;
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000;
+}
+
+.wallet-adapter-modal-button-close:hover svg {
+  fill: var(--mint, #21eeb8) !important;
+}
+
+.wallet-adapter-modal-list {
+  margin: 12px 0 0 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  list-style: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wallet-adapter-modal-list li {
+  margin: 0;
+  padding: 0;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  background: #0d122b !important;
+  border: 2px solid var(--line, #30375d) !important;
+  border-radius: 0px !important;
+  box-shadow: 3px 3px 0px #040614;
+  color: var(--text, #f0edff) !important;
+  font-family: var(--body, "Space Grotesk", sans-serif) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  height: auto !important;
+  min-height: 48px;
+  padding: 10px 16px !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  transition: all 0.15s ease;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):hover {
+  background: #161c42 !important;
+  border-color: var(--mint, #21eeb8) !important;
+  color: var(--mint, #21eeb8) !important;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #040614, 0 0 12px rgba(33, 238, 184, 0.3) !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button span {
+  font-family: var(--pixel, "Press Start 2P", monospace) !important;
+  font-size: 10px !important;
+  color: var(--muted, #9b9fb8) !important;
+  margin-left: auto;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon img,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon img {
+  width: 26px;
+  height: 26px;
+  image-rendering: pixelated;
+}
+
+.wallet-adapter-modal-list-more {
+  font-family: var(--pixel, "Press Start 2P", monospace) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.5px;
+  color: var(--mint, #21eeb8) !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer;
+  padding: 12px 0 4px 0 !important;
+  margin-top: 6px;
+  align-self: center !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.wallet-adapter-modal-list-more svg {
+  fill: var(--mint, #21eeb8) !important;
+}
+
+.wallet-adapter-modal-list-more:hover {
+  color: var(--amber, #ffbe59) !important;
+}
+
+.wallet-adapter-modal-list-more:hover svg {
+  fill: var(--amber, #ffbe59) !important;
+}
+
+.wallet-adapter-modal-middle {
+  padding: 12px 0 0 0 !important;
+  width: 100%;
+}
+
+.wallet-adapter-modal-middle-button {
+  background-color: var(--purple, #ae66f5) !important;
+  border: 2px solid var(--text, #f0edff) !important;
+  border-radius: 0px !important;
+  box-shadow: 3px 3px 0px #000;
+  color: #fff !important;
+  font-family: var(--pixel, "Press Start 2P", monospace) !important;
+  font-size: 12px !important;
+  padding: 12px 16px !important;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.wallet-adapter-modal-middle-button:hover {
+  background-color: var(--mint, #21eeb8) !important;
+  color: var(--bg, #080c23) !important;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000;
+}
+
+/* Dropdown styling overrides */
+.wallet-adapter-dropdown-list {
+  background: var(--surface, #10152f) !important;
+  border: 2px solid var(--purple, #ae66f5) !important;
+  border-radius: 0px !important;
+  box-shadow: 4px 4px 0px #000 !important;
+  padding: 6px !important;
+  font-family: var(--body, "Space Grotesk", sans-serif) !important;
+  z-index: 1000 !important;
+}
+
+.wallet-adapter-dropdown-list-item {
+  border-radius: 0px !important;
+  font-family: var(--body, "Space Grotesk", sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text, #f0edff) !important;
+  height: 38px !important;
+  padding: 0 14px !important;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.wallet-adapter-dropdown-list-item:not([disabled]):hover {
+  background: #1b2145 !important;
+  color: var(--mint, #21eeb8) !important;
+}
+
+/* WalletHeaderButton Custom Retro Pill and Menu */
+.wallet-connected-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.wallet-pill-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface, #10152f);
+  border: 2px solid var(--mint, #21eeb8);
+  border-radius: 0px;
+  color: var(--text, #f0edff);
+  padding: 8px 12px;
+  font-family: var(--pixel, "Press Start 2P", monospace);
+  font-size: 10px;
+  box-shadow: 2px 2px 0px #040614;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.wallet-pill-button:hover {
+  border-color: var(--amber, #ffbe59);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #040614, 0 0 10px rgba(33, 238, 184, 0.25);
+}
+
+.wallet-pill-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wallet-pill-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--mint, #21eeb8);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--mint, #21eeb8);
+}
+
+.wallet-pill-status-text {
+  color: var(--mint, #21eeb8);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+.wallet-pill-address {
+  color: var(--text, #f0edff);
+  font-family: var(--pixel, "Press Start 2P", monospace);
+  font-size: 10px;
+  border-left: 1px solid var(--line, #30375d);
+  padding-left: 10px;
+}
+
+.wallet-pill-balance {
+  color: var(--amber, #ffbe59);
+  font-size: 10px;
+  border-left: 1px solid var(--line, #30375d);
+  padding-left: 10px;
+}
+
+.wallet-pill-arrow {
+  font-size: 8px;
+  color: var(--muted, #9b9fb8);
+  margin-left: 2px;
+  transition: transform 0.15s ease;
+}
+
+.wallet-pill-arrow.open {
+  transform: rotate(180deg);
+}
+
+.wallet-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: var(--surface, #10152f);
+  border: 2px solid var(--purple, #ae66f5);
+  border-radius: 0px;
+  box-shadow: 4px 4px 0px #040614, 0 0 16px rgba(174, 102, 245, 0.25);
+  padding: 6px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wallet-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0px;
+  color: var(--text, #f0edff);
+  font-family: var(--body, "Space Grotesk", sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.wallet-dropdown-item:hover:not([disabled]) {
+  background: #1b2145;
+  border-color: var(--line, #30375d);
+  color: var(--mint, #21eeb8);
+}
+
+.wallet-dropdown-item[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wallet-dropdown-icon {
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  display: inline-block;
+}
+
+.wallet-dropdown-item.disconnect {
+  color: #ff6b81;
+  border-top: 1px solid var(--line, #30375d);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.wallet-dropdown-item.disconnect:hover {
+  background: rgba(255, 107, 129, 0.1);
+  border-color: #ff6b81;
+  color: #ff6b81;
+}

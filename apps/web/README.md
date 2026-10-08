@@ -8,7 +8,31 @@ npm ci
 npm run dev
 ```
 
-Abra http://localhost:3000. Para validar: `npm run build` e `npm run typecheck`.
+Abra http://localhost:3000. Para validar:
+- `npm test` (testes unitários com Vitest)
+- `npm run typecheck` (validação de tipos TypeScript)
+- `npm run build` (build de produção do Next.js)
+
+## Variáveis de Ambiente (Web3 / Solana)
+
+O subsistema de autenticação e consulta de carteira conecta à **Solana Devnet** por padrão e pode ser customizado via `.env.local` ou variáveis de ambiente:
+
+| Variável | Padrão | Descrição |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | `https://api.devnet.solana.com` | Endpoint RPC HTTP para consultas de saldo e tokens. |
+| `NEXT_PUBLIC_SOLANA_NETWORK` | `devnet` | Cluster de rede (`devnet`, `testnet`, `mainnet-beta`). |
+| `NEXT_PUBLIC_USDC_MINT` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` | SPL Token Mint oficial do USDC na Solana Devnet. |
+
+## Autenticação Web3 e Carteiras
+
+- Suporte ao **Solana Wallet Standard** com auto-detecção de carteiras compatíveis instaladas no navegador (Phantom, Solflare, Backpack, etc.).
+- Provedor global SSR-safe (`SolanaWalletProvider`) prevenindo erros de hidratação entre cliente e servidor.
+- Hook centralizado `usePlemuAuth`:
+  - Consulta resiliente de saldo nativo (SOL) e SPL Token (USDC Devnet) com tratamento de contas ATA não inicializadas (fail-closed, exibindo `0.00 USDC` sem erros não capturados).
+  - Prevenção de concorrência com debounce de 5 segundos no botão de atualização manual para evitar rate-limiting (HTTP 429) em RPCs públicos.
+  - Suporte a Sign-In With Solana (SIWS) via `signChallenge`.
+- Componente de cabeçalho `WalletHeaderButton` integrado na Home (`/`) e no Creator Studio (`/creator`).
+- Aba "Receitas e carteira" no Creator Studio (`/creator#revenue`) com exibição de endereço truncado, atalho de cópia, link direto para o Solana Explorer (Devnet) e saldos em tempo real.
 
 ## Escopo desta versão
 
