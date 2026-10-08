@@ -8,10 +8,12 @@ import { getExplorerUrl, formatSol } from "../lib/solana-utils";
 
 export interface WalletHeaderButtonProps {
   className?: string;
+  onConnect?: () => void;
 }
 
 export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
   className,
+  onConnect,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -80,8 +82,9 @@ export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
         }
       });
     }
+    onConnect?.();
     setVisible(true);
-  }, [setVisible]);
+  }, [onConnect, setVisible]);
 
   const handleCopy = useCallback(async () => {
     if (!base58Address) return;

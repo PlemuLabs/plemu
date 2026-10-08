@@ -13,9 +13,12 @@ export const DEFAULT_DEVNET_RPC = "https://api.devnet.solana.com";
 export const DEFAULT_MAINNET_RPC = "https://api.mainnet-beta.solana.com";
 
 export function getSolanaConfig(): SolanaConfig {
-  const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as SolanaNetwork) || "devnet";
-  const defaultRpc = network === "mainnet-beta" ? DEFAULT_MAINNET_RPC : DEFAULT_DEVNET_RPC;
-  const defaultUsdcMint = network === "mainnet-beta" ? MAINNET_USDC_MINT : DEVNET_USDC_MINT;
+  const network =
+    (process.env.NEXT_PUBLIC_SOLANA_NETWORK as SolanaNetwork) || "devnet";
+  const defaultRpc =
+    network === "mainnet-beta" ? DEFAULT_MAINNET_RPC : DEFAULT_DEVNET_RPC;
+  const defaultUsdcMint =
+    network === "mainnet-beta" ? MAINNET_USDC_MINT : DEVNET_USDC_MINT;
 
   const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || defaultRpc;
   const usdcMint = process.env.NEXT_PUBLIC_USDC_MINT || defaultUsdcMint;

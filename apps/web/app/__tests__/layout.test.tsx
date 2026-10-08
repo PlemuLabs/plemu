@@ -1,8 +1,12 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import RootLayout from "../layout";
+
+vi.mock("../../components/app-shell", () => ({
+  AppShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 
 function TestChild() {
   const { connection } = useConnection();
@@ -14,7 +18,7 @@ describe("RootLayout", () => {
     render(
       <RootLayout>
         <TestChild />
-      </RootLayout>
+      </RootLayout>,
     );
 
     const child = screen.getByTestId("layout-child");

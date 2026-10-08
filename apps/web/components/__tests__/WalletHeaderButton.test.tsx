@@ -1,6 +1,12 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import { WalletHeaderButton } from "../WalletHeaderButton";
 import * as usePlemuAuthModule from "../../hooks/usePlemuAuth";
 import * as walletAdapterUiModule from "@solana/wallet-adapter-react-ui";
@@ -60,7 +66,9 @@ describe("WalletHeaderButton", () => {
       setVisible: mockSetVisible,
     });
 
-    vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue(defaultAuthState);
+    vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue(
+      defaultAuthState,
+    );
   });
 
   afterEach(() => {
@@ -169,7 +177,7 @@ describe("WalletHeaderButton", () => {
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "Dos7xNqW8vGkE6y2k8D2Vp9k1p4mQz8wR5tY7u3i4o5p"
+      "Dos7xNqW8vGkE6y2k8D2Vp9k1p4mQz8wR5tY7u3i4o5p",
     );
     expect(screen.getByText("Copiado!")).toBeDefined();
 
@@ -232,7 +240,7 @@ describe("WalletHeaderButton", () => {
     });
     expect(explorerLink).toBeDefined();
     expect(explorerLink.getAttribute("href")).toContain(
-      "https://explorer.solana.com/address/Dos7xNqW8vGkE6y2k8D2Vp9k1p4mQz8wR5tY7u3i4o5p?cluster=devnet"
+      "https://explorer.solana.com/address/Dos7xNqW8vGkE6y2k8D2Vp9k1p4mQz8wR5tY7u3i4o5p?cluster=devnet",
     );
     expect(explorerLink.getAttribute("target")).toBe("_blank");
     expect(explorerLink.getAttribute("rel")).toContain("noopener");
@@ -319,7 +327,7 @@ describe("WalletHeaderButton", () => {
       <div>
         <div data-testid="outside">Outside Area</div>
         <WalletHeaderButton />
-      </div>
+      </div>,
     );
 
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });

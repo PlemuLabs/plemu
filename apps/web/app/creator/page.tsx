@@ -317,7 +317,7 @@ export default function Creator() {
         : formatUsdc(parseUsdc(draft.price)!);
   const pageTitle = navigation.find((n) => n.id === tab)?.label;
   return (
-    <div className="creator-app">
+    <div className="creator-app" lang="pt-BR">
       <header className="creator-header">
         <Link href="/" className="brand">
           PLEMU<span className="purple-text">✦</span>
@@ -893,8 +893,8 @@ export default function Creator() {
                     <>
                       <h2>Carteira de recebimento</h2>
                       <p>
-                        As receitas serão em USDC na Solana. A carteira precisará
-                        ser conectada e sua titularidade verificada.
+                        As receitas serão em USDC na Solana. A carteira
+                        precisará ser conectada e sua titularidade verificada.
                       </p>
                       <div className="wallet-placeholder">
                         ◇ CARTEIRA NÃO CONECTADA
@@ -946,7 +946,7 @@ export default function Creator() {
                                 ? getExplorerUrl(
                                     SOLANA_CONFIG.network,
                                     "address",
-                                    base58Address
+                                    base58Address,
                                   )
                                 : "#"
                             }
@@ -963,8 +963,8 @@ export default function Creator() {
                             {isLoadingBalance
                               ? "CARREGANDO..."
                               : solBalance !== null
-                              ? `${solBalance.toFixed(2)} SOL`
-                              : "—"}
+                                ? `${solBalance.toFixed(2)} SOL`
+                                : "—"}
                           </strong>
                         </div>
                         <div className="wallet-detail-row">

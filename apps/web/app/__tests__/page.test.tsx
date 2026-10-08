@@ -2,15 +2,27 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import Home from "../page";
+import { AppShell } from "../../components/app-shell";
 import * as usePlemuAuthModule from "../../hooks/usePlemuAuth";
 import * as walletAdapterUiModule from "@solana/wallet-adapter-react-ui";
 
 vi.mock("../../hooks/usePlemuAuth");
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+vi.mock("../../components/home-experience", () => ({
+  HomeExperience: () => <div>Current frontend home</div>,
+}));
+function renderHome() {
+  render(
+    <AppShell>
+      <Home />
+    </AppShell>,
+  );
+}
 vi.mock("@solana/wallet-adapter-react-ui", () => ({
   useWalletModal: vi.fn(),
 }));
 
-describe("Home Page with WalletHeaderButton Integration", () => {
+describe("Shared Frontend Wallet Integration", () => {
   const mockSetVisible = vi.fn();
   const mockConnect = vi.fn().mockResolvedValue(undefined);
   const mockDisconnect = vi.fn().mockResolvedValue(undefined);
@@ -54,24 +66,33 @@ describe("Home Page with WalletHeaderButton Integration", () => {
       setVisible: mockSetVisible,
     });
 
-    vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue(defaultAuthState);
+    vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue(
+      defaultAuthState,
+    );
   });
 
   it("does not render the legacy 'INTEGRAÇÃO EM BREVE' dialog", () => {
-    render(<Home />);
+    renderHome();
     expect(screen.queryByText("INTEGRAÇÃO EM BREVE")).toBeNull();
   });
 
-  it("renders WalletHeaderButton in header in disconnected state", () => {
-    render(<Home />);
-    const walletBtn = screen.getByRole("button", { name: /CONECTAR CARTEIRA/i });
+  it("opens the real wallet picker from the shared wallet dialog", () => {
+    renderHome();
+    fireEvent.click(screen.getByRole("button", { name: "Wallet" }));
+    const walletBtn = screen.getByRole("button", {
+      name: /CONECTAR CARTEIRA/i,
+    });
     expect(walletBtn).toBeDefined();
 
     fireEvent.click(walletBtn);
     expect(mockSetVisible).toHaveBeenCalledWith(true);
+    expect(
+      screen.queryByRole("dialog", { name: "Enter the arcade economy" }),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Demo wallet" })).toBeNull();
   });
 
-  it("renders connected wallet state in header when wallet is connected", () => {
+  it("shows the real wallet balance without connecting the demo portfolio", () => {
     vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue({
       ...defaultAuthState,
       isConnected: true,
@@ -81,7 +102,8 @@ describe("Home Page with WalletHeaderButton Integration", () => {
       solBalance: 2.5,
     });
 
-    render(<Home />);
+    renderHome();
+    fireEvent.click(screen.getByRole("button", { name: "Wallet" }));
     expect(screen.getByText("ONLINE")).toBeDefined();
     expect(screen.getByText("Dos7...4o5p")).toBeDefined();
     expect(screen.getByText("2.50 SOL")).toBeDefined();

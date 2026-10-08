@@ -25,7 +25,7 @@ function isAccountNotFoundError(err: unknown): boolean {
 
 export async function fetchSolBalance(
   connection: Connection,
-  publicKey: PublicKey
+  publicKey: PublicKey,
 ): Promise<bigint | null> {
   try {
     const lamports = await connection.getBalance(publicKey);
@@ -38,10 +38,13 @@ export async function fetchSolBalance(
 export async function fetchUsdcBalance(
   connection: Connection,
   publicKey: PublicKey,
-  mintAddress: PublicKey | string
+  mintAddress: PublicKey | string,
 ): Promise<bigint | null> {
   try {
-    const mint = typeof mintAddress === "string" ? new PublicKey(mintAddress) : mintAddress;
+    const mint =
+      typeof mintAddress === "string"
+        ? new PublicKey(mintAddress)
+        : mintAddress;
     const ata = getAssociatedTokenAddressSync(mint, publicKey);
     const balanceResponse = await connection.getTokenAccountBalance(ata);
     if (!balanceResponse || !balanceResponse.value) {
@@ -59,7 +62,7 @@ export async function fetchUsdcBalance(
 export function truncateAddress(
   address: string | PublicKey | null | undefined,
   prefixLen = 4,
-  suffixLen = 4
+  suffixLen = 4,
 ): string {
   if (!address) return "";
 
@@ -100,7 +103,7 @@ export function formatUsdcAmount(units: bigint | number, decimals = 2): string {
 export function getExplorerUrl(
   cluster: string,
   type: "address" | "tx",
-  identifier: string
+  identifier: string,
 ): string {
   const isMainnet = cluster === "mainnet-beta" || cluster === "mainnet";
   const clusterSuffix = isMainnet ? "" : `?cluster=${cluster}`;

@@ -51,7 +51,9 @@
   background: var(--surface, #10152f) !important;
   border: 2px solid var(--purple, #ae66f5) !important;
   border-radius: 0px !important;
-  box-shadow: 6px 6px 0px #040614, 0 0 24px rgba(174, 102, 245, 0.25) !important;
+  box-shadow:
+    6px 6px 0px #040614,
+    0 0 24px rgba(174, 102, 245, 0.25) !important;
   font-family: var(--body, "Space Grotesk", sans-serif);
   color: var(--text, #f0edff);
   padding: 24px !important;
@@ -155,7 +157,9 @@
   border-color: var(--mint, #21eeb8) !important;
   color: var(--mint, #21eeb8) !important;
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #040614, 0 0 12px rgba(33, 238, 184, 0.3) !important;
+  box-shadow:
+    4px 4px 0px #040614,
+    0 0 12px rgba(33, 238, 184, 0.3) !important;
 }
 
 .wallet-adapter-modal-list .wallet-adapter-button span {
@@ -248,7 +252,9 @@
   color: var(--text, #f0edff) !important;
   height: 38px !important;
   padding: 0 14px !important;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .wallet-adapter-dropdown-list-item:not([disabled]):hover {
@@ -282,7 +288,9 @@
 .wallet-pill-button:hover {
   border-color: var(--amber, #ffbe59);
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #040614, 0 0 10px rgba(33, 238, 184, 0.25);
+  box-shadow:
+    3px 3px 0px #040614,
+    0 0 10px rgba(33, 238, 184, 0.25);
 }
 
 .wallet-pill-status {
@@ -339,7 +347,9 @@
   background: var(--surface, #10152f);
   border: 2px solid var(--purple, #ae66f5);
   border-radius: 0px;
-  box-shadow: 4px 4px 0px #040614, 0 0 16px rgba(174, 102, 245, 0.25);
+  box-shadow:
+    4px 4px 0px #040614,
+    0 0 16px rgba(174, 102, 245, 0.25);
   padding: 6px;
   z-index: 1000;
   display: flex;
@@ -363,7 +373,10 @@
   text-decoration: none;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
   box-sizing: border-box;
 }
 

@@ -99,23 +99,39 @@ describe("solana-utils", () => {
 
   describe("getExplorerUrl", () => {
     it("builds devnet address URL with cluster query parameter", () => {
-      const url = getExplorerUrl("devnet", "address", "Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w");
-      expect(url).toBe("https://explorer.solana.com/address/Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w?cluster=devnet");
+      const url = getExplorerUrl(
+        "devnet",
+        "address",
+        "Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w",
+      );
+      expect(url).toBe(
+        "https://explorer.solana.com/address/Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w?cluster=devnet",
+      );
     });
 
     it("builds mainnet address URL without cluster query parameter", () => {
-      const url = getExplorerUrl("mainnet-beta", "address", "Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w");
-      expect(url).toBe("https://explorer.solana.com/address/Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w");
+      const url = getExplorerUrl(
+        "mainnet-beta",
+        "address",
+        "Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w",
+      );
+      expect(url).toBe(
+        "https://explorer.solana.com/address/Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w",
+      );
     });
 
     it("builds transaction URL correctly", () => {
       const url = getExplorerUrl("devnet", "tx", "5h6x...txhash");
-      expect(url).toBe("https://explorer.solana.com/tx/5h6x...txhash?cluster=devnet");
+      expect(url).toBe(
+        "https://explorer.solana.com/tx/5h6x...txhash?cluster=devnet",
+      );
     });
   });
 
   describe("fetchSolBalance", () => {
-    const mockPubkey = new PublicKey("Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w");
+    const mockPubkey = new PublicKey(
+      "Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w",
+    );
 
     it("queries getBalance and returns bigint lamports", async () => {
       const mockConnection = {
@@ -129,7 +145,9 @@ describe("solana-utils", () => {
 
     it("returns null when getBalance fails with RPC error or rate limit", async () => {
       const mockConnection = {
-        getBalance: vi.fn().mockRejectedValue(new Error("429 Too Many Requests")),
+        getBalance: vi
+          .fn()
+          .mockRejectedValue(new Error("429 Too Many Requests")),
       } as unknown as Connection;
 
       const balance = await fetchSolBalance(mockConnection, mockPubkey);
@@ -138,8 +156,12 @@ describe("solana-utils", () => {
   });
 
   describe("fetchUsdcBalance", () => {
-    const mockPubkey = new PublicKey("Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w");
-    const mockUsdcMint = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+    const mockPubkey = new PublicKey(
+      "Dos7Fv3w3vAEvb6LpBvZ4c5aX8bK9p1q2r3s4t5u6v7w",
+    );
+    const mockUsdcMint = new PublicKey(
+      "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    );
 
     it("queries getTokenAccountBalance for ATA and returns bigint units", async () => {
       const mockConnection = {
@@ -153,7 +175,11 @@ describe("solana-utils", () => {
         }),
       } as unknown as Connection;
 
-      const balance = await fetchUsdcBalance(mockConnection, mockPubkey, mockUsdcMint);
+      const balance = await fetchUsdcBalance(
+        mockConnection,
+        mockPubkey,
+        mockUsdcMint,
+      );
       expect(mockConnection.getTokenAccountBalance).toHaveBeenCalledTimes(1);
       expect(balance).toBe(15_500_000n);
     });
@@ -166,18 +192,28 @@ describe("solana-utils", () => {
         getTokenAccountBalance: vi.fn().mockRejectedValue(error),
       } as unknown as Connection;
 
-      const balance = await fetchUsdcBalance(mockConnection, mockPubkey, mockUsdcMint);
+      const balance = await fetchUsdcBalance(
+        mockConnection,
+        mockPubkey,
+        mockUsdcMint,
+      );
       expect(balance).toBe(0n);
     });
 
     it("resolves uninitialized ATA with 'could not find account' RPC error to 0n without throwing", async () => {
-      const error = new Error("failed to get token account: Invalid param: could not find account");
+      const error = new Error(
+        "failed to get token account: Invalid param: could not find account",
+      );
 
       const mockConnection = {
         getTokenAccountBalance: vi.fn().mockRejectedValue(error),
       } as unknown as Connection;
 
-      const balance = await fetchUsdcBalance(mockConnection, mockPubkey, mockUsdcMint);
+      const balance = await fetchUsdcBalance(
+        mockConnection,
+        mockPubkey,
+        mockUsdcMint,
+      );
       expect(balance).toBe(0n);
     });
 
@@ -188,7 +224,11 @@ describe("solana-utils", () => {
         getTokenAccountBalance: vi.fn().mockRejectedValue(error),
       } as unknown as Connection;
 
-      const balance = await fetchUsdcBalance(mockConnection, mockPubkey, mockUsdcMint);
+      const balance = await fetchUsdcBalance(
+        mockConnection,
+        mockPubkey,
+        mockUsdcMint,
+      );
       expect(balance).toBeNull();
     });
   });

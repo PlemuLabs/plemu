@@ -2,12 +2,14 @@
   "name": "@plemu-labs/web",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "node --test tests/*.test.mjs && vitest run",
+    "format:check": "prettier --check components lib app/globals.css app/play-system.css app/handheld.css app/guide/guide.css"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.15",
@@ -17,7 +19,12 @@
     "@solana/web3.js": "^1.99.0",
     "next": "16.3.8",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource/dm-mono": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "gsap": "^3.15.0"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
@@ -26,6 +33,10 @@
     "@types/react-dom": "^19.0.0",
     "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "prettier": "^3.9.9"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }
