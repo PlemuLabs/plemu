@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { parseUsdc, formatUsdc, type Monetization } from "./commerce";
+import { WalletHeaderButton } from "../components/WalletHeaderButton";
 
 const games = [
   {
@@ -72,12 +73,10 @@ export default function Home() {
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Game | null>(null);
   const [playing, setPlaying] = useState(false);
-  const [walletOpen, setWalletOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [checkout, setCheckout] = useState<"purchase" | "tip" | null>(null);
   const [amount, setAmount] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
-  const walletDialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     try {
       const stored: unknown = JSON.parse(
@@ -110,10 +109,6 @@ export default function Home() {
     if (selected) dialog.current?.showModal();
     else dialog.current?.close();
   }, [selected]);
-  useEffect(() => {
-    if (walletOpen) walletDialog.current?.showModal();
-    else walletDialog.current?.close();
-  }, [walletOpen]);
   const openGame = (game: Game) => {
     setPlaying(false);
     setCheckout(null);
@@ -172,9 +167,7 @@ export default function Home() {
         </nav>
         <div className="header-status">
           <span className="build-status">■ WEB ALPHA</span>
-          <button className="wallet" onClick={() => setWalletOpen(true)}>
-            CONECTAR CARTEIRA
-          </button>
+          <WalletHeaderButton />
         </div>
       </header>
       <main>
@@ -583,38 +576,6 @@ export default function Home() {
             )}
           </>
         )}
-      </dialog>
-      <dialog
-        ref={walletDialog}
-        className="wallet-dialog"
-        onCancel={() => setWalletOpen(false)}
-        onClose={() => setWalletOpen(false)}
-      >
-        <div className="dialog-heading">
-          <h2>Carteira Solana</h2>
-          <button
-            className="close-button"
-            onClick={() => setWalletOpen(false)}
-            aria-label="Fechar"
-          >
-            ✕
-          </button>
-        </div>
-        <span className="level">INTEGRAÇÃO EM BREVE</span>
-        <p>
-          Os pagamentos do Plemu serão somente em USDC na Solana. Você precisará
-          de USDC para a compra e SOL para a taxa de rede. A conexão e os
-          pagamentos ainda não estão disponíveis nesta prévia.
-        </p>
-        <button
-          className="button primary"
-          onClick={() => {
-            setWalletOpen(false);
-            openGame(games[0]);
-          }}
-        >
-          TESTAR O PLAYER
-        </button>
       </dialog>
     </>
   );

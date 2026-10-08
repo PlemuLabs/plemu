@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import "@solana/wallet-adapter-react-ui/styles.css";
+import "../components/wallet-adapter-retro.css";
 import "./globals.css";
+import { SolanaWalletProvider } from "../providers/SolanaWalletProvider";
 
 export const metadata: Metadata = {
   title: "Plemu — Play. Create. Share.",
@@ -13,7 +16,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <SolanaWalletProvider>{children}</SolanaWalletProvider>
+      </body>
     </html>
   );
 }
+
