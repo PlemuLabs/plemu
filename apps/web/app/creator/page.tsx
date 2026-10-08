@@ -253,7 +253,7 @@ export default function Creator() {
         : formatUsdc(parseUsdc(draft.price)!);
   const pageTitle = navigation.find((n) => n.id === tab)?.label;
   return (
-    <div className="creator-app">
+    <div className="creator-app" lang="pt-BR">
       <header className="creator-header">
         <Link href="/" className="brand">
           PLEMU<span className="purple-text">✦</span>

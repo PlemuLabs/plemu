@@ -1,9 +1,17 @@
 node_modules/
 .next/
 out/
+dist/
+coverage/
+.vercel/
+*.log
 *.tsbuildinfo
 .env*
 !.env.example
 
 # Framework-generated TypeScript references
 next-env.d.ts
+
+# Local visual verification and retained artwork intermediates
+qa/
+public/art/*-source.png
