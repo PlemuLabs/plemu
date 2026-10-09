@@ -173,11 +173,11 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
   4. Execução de `dotnet build` e `dotnet test` na solução C# raiz para garantir ausência de regressões no monorepo.
   5. Atualização da documentação de contrato em `contracts/wallet-interface.md` registrando `IMobileWalletAdapter` e `MwaWallet`.
 - **Critérios de Aceitação:**
-  - [ ] `WalletFactory` implementado com resolução automática baseada na plataforma de execução.
-  - [ ] `WalletFactoryTests.cs` com 100% de cobertura NUnit.
-  - [ ] Todas as suítes de testes (`MwaResultModelTests`, `MwaAdapterTests`, `MwaWalletFacadeTests`, `WalletFactoryTests`, `WalletMockTests`) passando com sucesso.
-  - [ ] Build e testes de `plemu/Plemu.slnx` executando com sucesso (100% pass).
-  - [ ] Documento `contracts/wallet-interface.md` atualizado com o contrato MWA.
+  - [x] `WalletFactory` implementado com resolução automática baseada na plataforma de execução.
+  - [x] `WalletFactoryTests.cs` com 100% de cobertura NUnit.
+  - [x] Todas as suítes de testes (`MwaResultModelTests`, `MwaAdapterTests`, `MwaWalletFacadeTests`, `WalletFactoryTests`, `WalletMockTests`) passando com sucesso.
+  - [x] Build e testes de `plemu/Plemu.slnx` executando com sucesso (100% pass).
+  - [x] Documento `contracts/wallet-interface.md` atualizado com o contrato MWA.
 
 ---
 
