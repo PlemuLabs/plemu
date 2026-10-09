@@ -17,6 +17,9 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
 | **Slice 5** | Configuração do Manifesto Android (`AndroidManifest.xml`) com Package Visibility e Permissões | AFK | Slice 4 | US-1, US-15 |
 | **Slice 6** | Fábrica de Resolução de Carteira, Integridade de Contratos e Validação NUnit Global | AFK | Slice 3, Slice 4, Slice 5 | US-1, US-12, US-13, US-16 |
 | **Slice 7** | Homologação no Solana Seeker e Auditoria de Segurança de Memória e Transações | HITL | Slice 6 | US-1 a US-16 |
+| **Slice 8** | Serialização Binária de Transações Solana (Wire-Format) | AFK (Pendente) | Slice 7 | US-5, US-6, US-7 |
+| **Slice 9** | Implementação do Transporte Real MWA 2.0 (WebSocket + ECDH X25519 ou Solana.Unity-SDK) | AFK (Pendente) | Slice 8 | US-1, US-2, US-3, US-5, US-6 |
+| **Slice 10** | Escuta Assíncrona Real no Unity (TaskCompletionSource / Intent Lifecycle) | AFK (Pendente) | Slice 9 | US-3, US-4, US-7, US-8 |
 
 ---
 
@@ -199,3 +202,70 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
   - [x] Transações de compra de licença e gorjetas confirmadas na Solana Devnet (orquestração em `MwaWallet`, assinaturas `MwaSig-devnet-*` e verificação no explorer).
   - [x] Retorno gracioso em caso de cancelamento da operação pelo usuário (validado com `IsCancelled == true` e zero exceções brutas não tratadas).
   - [x] Zero vazamento de credenciais em logs ou armazenamento em disco (conformidade fail-closed comprovada em `MwaSecurityAuditTests.cs`, `ToString()` redigido e `audit_wallet_security.py`).
+
+---
+
+## Backlog de Fechamento de Furos para Hardware Físico Real (MWA 2.0 Production Ready)
+> **STATUS:** PENDENTE / AGUARDANDO ORDEM DO USUÁRIO PARA INÍCIO DA IMPLEMENTAÇÃO.
+
+### Slice 8: Serialização Binária de Transações Solana (Wire-Format)
+- **Tipo:** AFK (Aguardando ordem para implementar)
+- **Bloqueado por:** Slice 7
+- **User Stories Cobertas:** US-5, US-6, US-7
+- **Furo Sanado:** Furo Funcional #3 (Substituição de payloads JSON por transações binárias reais no formato wire-format da Solana).
+- **O que construir:**
+  1. Criação de serializador binário de transações Solana (`VersionedTransaction` / `LegacyTransaction`) no formato nativo exigido pelo Seed Vault:
+     - Header de assinaturas (`num_required_signatures`, `num_readonly_signed`, `num_readonly_unsigned`).
+     - Compact-array de endereços de contas (32 bytes por chave pública).
+     - Recent Blockhash (32 bytes).
+     - Compact-array de instruções compiladas (`programIdIndex`, compact-array de `accountIndices`, dados compactos da instrução).
+  2. Atualização dos métodos comerciais em `MwaWallet.cs` (`SendTip`, `PurchaseSeat`, `PurchaseListing`) para montar a instrução binária de transferência de SOL (`SystemProgram.Transfer`) ou Anchor instruction em vez do JSON mock atual (`{"type":"tip",...}`).
+  3. Obtenção do `recentBlockhash` via RPC Solana Devnet antes da serialização.
+  4. Suíte de testes NUnit validando a estrutura de bytes compilada, integridade do cabeçalho binário e rejeição de payloads malformados.
+- **Critérios de Aceitação:**
+  - [ ] Módulo serializador binário de transações Solana implementado no assembly `Plemu.Wallet`.
+  - [ ] `MwaWallet.SendTip` gera payload em bytes compatível com a validação da Solana VM e Seed Vault.
+  - [ ] `MwaWallet.PurchaseSeat` e `PurchaseListing` compilam instruções binárias válidas.
+  - [ ] Testes unitários NUnit cobrindo 100% da serialização binária e decodificação do wire-format.
+
+---
+
+### Slice 9: Implementação do Transporte Real MWA 2.0 (WebSocket + ECDH X25519 ou Solana.Unity-SDK)
+- **Tipo:** AFK (Aguardando ordem para implementar)
+- **Bloqueado por:** Slice 8
+- **User Stories Cobertas:** US-1, US-2, US-3, US-5, US-6
+- **Furo Sanado:** Furo Crítico #2 e Conflito de Premissa #5 (Adequação ao protocolo oficial MWA 2.0 que exige handshake WebSocket local e cifragem ECDH/AES-GCM).
+- **O que construir:**
+  1. Decisão formal da estratégia de transporte:
+     - **Opção A (Recomendada pela Solana Foundation):** Integrar o `Solana.Unity-SDK` (Magicblock / Solana Mobile) no Unity via UPM, desacoplando-o atrás de uma implementação de `IMobileWalletAdapter` (`SolanaSdkMwaAdapter`).
+     - **Opção B (C# Puro):** Implementar servidor WebSocket local (`127.0.0.1`), rotinas de troca de chaves Diffie-Hellman elíptica (X25519) e criptografia de mensagens JSON-RPC com AES-GCM-256 via `System.Security.Cryptography`.
+  2. Handshake completo de associação (`authorize`, `reauthorize`, `deauthorize`) com o Seed Vault.
+  3. Envio e recepção de mensagens JSON-RPC cifradas para o método `sign_and_send_transactions`.
+  4. Testes de integração em mock e testes EditMode validando o fluxo de mensagens RPC e criptografia.
+- **Critérios de Aceitação:**
+  - [ ] Estratégia de transporte selecionada e aprovada pelo mantenedor.
+  - [ ] Handshake MWA 2.0 funcionando com porta local e Intent `solana-wallet:/v1/associate/local` (ou adapter do SDK).
+  - [ ] Cifragem de canal estabelecida sem exposição de credenciais em texto claro.
+  - [ ] Resposta real do Seed Vault recebida com a chave pública do usuário e assinaturas de transações.
+
+---
+
+### Slice 10: Escuta Assíncrona Real no Unity (TaskCompletionSource / Intent Lifecycle)
+- **Tipo:** AFK (Aguardando ordem para implementar)
+- **Bloqueado por:** Slice 9
+- **User Stories Cobertas:** US-3, US-4, US-7, US-8
+- **Furo Sanado:** Furo Crítico #1 e Furo de Fluxo #4 (Eliminação de retornos fictícios imediatos em `DefaultAndroidJniBridge` e tratamento de ciclo de vida assíncrono).
+- **O que construir:**
+  1. Em `DefaultAndroidJniBridge`, substituir `Task.FromResult(...)` por instâncias de `TaskCompletionSource<MwaConnectionResult>` e `TaskCompletionSource<MwaTransactionResult>`.
+  2. Implementar o listener de deep links e intents no Unity (`Application.deepLinkActivated` ou pooling de `currentActivity.getIntent()`).
+  3. Mapear retornos e erros do Seed Vault:
+     - Extração de parâmetros de retorno da Intent ou evento de callback.
+     - Conversão de cancelamentos ou rejeições pelo usuário em `Cancelled`.
+     - Resolução do `TaskCompletionSource` apenas quando o Seed Vault finalizar a atividade e retornar à tela do Plemu.
+  4. Tratamento de timeouts defensivos e encerramento de tarefas pendentes caso o usuário feche a aplicação ou cancele o processo pelo sistema operacional.
+  5. Testes unitários com simulação de resoluções atrasadas, cancelamentos assíncronos e timeouts.
+- **Critérios de Aceitação:**
+  - [ ] Zero dados fictícios hardcoded em `DefaultAndroidJniBridge`.
+  - [ ] `TaskCompletionSource` aguarda a conclusão da atividade externa do Seed Vault.
+  - [ ] Cancelamentos e rejeições biométricas resolvem graciosamente sem travar a UI (60 FPS).
+  - [ ] Suíte NUnit EditMode atualizada validando a semântica assíncrona.
