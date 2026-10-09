@@ -94,12 +94,12 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
   5. Proteção defensiva: chamadas às operações de compra ou gorjeta com a carteira desconectada devem falhar imediatamente de forma previsível (lançando `InvalidOperationException` ou retornando falha tratada sem vazar dados).
   6. Suíte de testes unitários NUnit EditMode em `apps/device/unity/Assets/_Game/Tests/EditMode/MwaWalletFacadeTests.cs` cobrindo o ciclo de vida de conexão, compras, gorjetas, comportamento desconectado e purga de memória.
 - **Critérios de Aceitação:**
-  - [ ] `MwaWallet` implementa `IWallet` sem alterar a assinatura do contrato estabelecido em `wallet-interface.md`.
-  - [ ] `Connect()` estabelece a sessão e preenche `PublicKey`.
-  - [ ] `Disconnect()` zera `_authToken`, `_publicKey` e `IsConnected` imediatamente.
-  - [ ] Operações comerciais executadas com carteira desconectada disparam erro fail-closed controlado.
-  - [ ] Operações comerciais conectadas retornam assinaturas válidas emitidas pelo adapter.
-  - [ ] Suíte `MwaWalletFacadeTests.cs` com 100% de cobertura NUnit no assembly de testes EditMode.
+  - [x] `MwaWallet` implementa `IWallet` sem alterar a assinatura do contrato estabelecido em `wallet-interface.md`.
+  - [x] `Connect()` estabelece a sessão e preenche `PublicKey`.
+  - [x] `Disconnect()` zera `_authToken`, `_publicKey` e `IsConnected` imediatamente.
+  - [x] Operações comerciais executadas com carteira desconectada disparam erro fail-closed controlado.
+  - [x] Operações comerciais conectadas retornam assinaturas válidas emitidas pelo adapter.
+  - [x] Suíte `MwaWalletFacadeTests.cs` com 100% de cobertura NUnit no assembly de testes EditMode.
 
 ---
 
