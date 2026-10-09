@@ -120,12 +120,12 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
   5. Captura defensiva de exceções JNI/Android (como `AndroidJavaException`, cancelamento da Activity pelo botão Voltar, ou rejeição biométrica), convertendo-as em `MwaConnectionResult.Failed(...)` e `MwaTransactionResult.Failed(...)` em inglês, impedindo o travamento da thread do Unity.
   6. Zero inclusão de bibliotecas binárias `.aar`, mantendo compatibilidade total com compilação IL2CPP para ARM64.
 - **Critérios de Aceitação:**
-  - [ ] `AndroidMwaAdapter` implementa `IMobileWalletAdapter` usando exclusivamente primitivas nativas do Unity (`AndroidJavaClass`, `AndroidJavaObject`).
-  - [ ] Verificação de presença do Seed Vault via `PackageManager` implementada.
-  - [ ] Disparo de intents com payload de identidade e cluster Devnet.
-  - [ ] Compilação condicional segura sem quebrar o build no Unity Editor ou Windows.
-  - [ ] Nenhuma dependência externa `.aar` ou alteração no `build.gradle` exigida.
-  - [ ] Tratamento resiliente de falhas de JNI retornando modelos tipados com mensagens explicativas.
+  - [x] `AndroidMwaAdapter` implementa `IMobileWalletAdapter` usando exclusivamente primitivas nativas do Unity (`AndroidJavaClass`, `AndroidJavaObject`).
+  - [x] Verificação de presença do Seed Vault via `PackageManager` implementada.
+  - [x] Disparo de intents com payload de identidade e cluster Devnet.
+  - [x] Compilação condicional segura sem quebrar o build no Unity Editor ou Windows.
+  - [x] Nenhuma dependência externa `.aar` ou alteração no `build.gradle` exigida.
+  - [x] Tratamento resiliente de falhas de JNI retornando modelos tipados com mensagens explicativas.
 
 ---
 
