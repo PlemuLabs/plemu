@@ -151,10 +151,10 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
      ```
   3. Manutenção da estrutura base compatível com o template padrão do Unity Player Activity, sem conflitos com plugins nativos de áudio/emulação existentes (`libretro_host.so`, `libsameboy_libretro_android.so`).
 - **Critérios de Aceitação:**
-  - [ ] Arquivo `AndroidManifest.xml` criado em `Assets/Plugins/Android/` com formatação XML válida.
-  - [ ] Tag `<queries>` com esquema `solana-wallet` presente e configurada.
-  - [ ] Permissão `android.permission.INTERNET` declarada.
-  - [ ] Sem conflitos com as bibliotecas nativas arm64-v8a existentes no diretório `libs/`.
+  - [x] Arquivo `AndroidManifest.xml` criado em `Assets/Plugins/Android/` com formatação XML válida.
+  - [x] Tag `<queries>` com esquema `solana-wallet` presente e configurada.
+  - [x] Permissão `android.permission.INTERNET` declarada.
+  - [x] Sem conflitos com as bibliotecas nativas arm64-v8a existentes no diretório `libs/`.
 
 ---
 
