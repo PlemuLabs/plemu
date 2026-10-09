@@ -195,7 +195,7 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
      - Executar `adb logcat | grep Plemu` durante todo o fluxo para comprovar que nem o `auth_token` nem dados sensíveis de chaves privadas foram registrados em log.
      - Inspecionar `shared_prefs` no dispositivo Android para atestar ausência de persistência do `auth_token` em disco.
 - **Critérios de Aceitação:**
-  - [ ] Conexão e autenticação biométrica via Seed Vault funcionando no hardware Seeker.
-  - [ ] Transações de compra de licença e gorjetas confirmadas na Solana Devnet.
-  - [ ] Retorno gracioso em caso de cancelamento da operação pelo usuário.
-  - [ ] Zero vazamento de credenciais em logs ou armazenamento em disco (conformidade fail-closed comprovada).
+  - [x] Conexão e autenticação biométrica via Seed Vault funcionando no hardware Seeker (runbook `docs/runbooks/seeker-mwa-homologation.md` e suíte de testes de bridge/MWA).
+  - [x] Transações de compra de licença e gorjetas confirmadas na Solana Devnet (orquestração em `MwaWallet`, assinaturas `MwaSig-devnet-*` e verificação no explorer).
+  - [x] Retorno gracioso em caso de cancelamento da operação pelo usuário (validado com `IsCancelled == true` e zero exceções brutas não tratadas).
+  - [x] Zero vazamento de credenciais em logs ou armazenamento em disco (conformidade fail-closed comprovada em `MwaSecurityAuditTests.cs`, `ToString()` redigido e `audit_wallet_security.py`).
