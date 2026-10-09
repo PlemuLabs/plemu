@@ -34,5 +34,18 @@ namespace Plemu.Wallet
         {
             return new MwaConnectionResult(false, null, null, reason, true);
         }
+
+        public override string ToString()
+        {
+            if (IsSuccess)
+            {
+                return $"[MwaConnectionResult: IsSuccess=True, PublicKey={PublicKey}, AuthToken=[REDACTED]]";
+            }
+            if (IsCancelled)
+            {
+                return $"[MwaConnectionResult: IsSuccess=False, IsCancelled=True, Error={ErrorMessage}]";
+            }
+            return $"[MwaConnectionResult: IsSuccess=False, Error={ErrorMessage}]";
+        }
     }
 }

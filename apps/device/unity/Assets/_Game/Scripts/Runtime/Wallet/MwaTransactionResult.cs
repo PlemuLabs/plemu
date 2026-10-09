@@ -32,5 +32,18 @@ namespace Plemu.Wallet
         {
             return new MwaTransactionResult(false, null, reason, true);
         }
+
+        public override string ToString()
+        {
+            if (IsSuccess)
+            {
+                return $"[MwaTransactionResult: IsSuccess=True, Signature={Signature}]";
+            }
+            if (IsCancelled)
+            {
+                return $"[MwaTransactionResult: IsSuccess=False, IsCancelled=True, Error={ErrorMessage}]";
+            }
+            return $"[MwaTransactionResult: IsSuccess=False, Error={ErrorMessage}]";
+        }
     }
 }
