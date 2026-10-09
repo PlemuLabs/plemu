@@ -52,7 +52,15 @@ namespace Plemu.Wallet
             _authToken = null;
             _publicKey = null;
             _isConnected = false;
-            _ = _adapter.DisconnectAsync();
+            _ = _adapter.DisconnectAsync().ContinueWith(
+                task =>
+                {
+                    if (task.IsFaulted && task.Exception != null)
+                    {
+                        _ = task.Exception;
+                    }
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <summary>

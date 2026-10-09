@@ -248,6 +248,7 @@ namespace Plemu.Wallet
                         intent.Call<AndroidJavaObject>("putExtra", "identity_uri", dappUri);
                         intent.Call<AndroidJavaObject>("putExtra", "identity_icon", dappIcon);
                         intent.Call<AndroidJavaObject>("putExtra", "cluster", cluster);
+                        intent.Call<AndroidJavaObject>("putExtra", "redirect_uri", "plemu://mwa-callback");
 
                         activity.Call("startActivity", intent);
                     }
@@ -281,6 +282,7 @@ namespace Plemu.Wallet
                     {
                         intent.Call<AndroidJavaObject>("putExtra", "auth_token", authToken);
                         intent.Call<AndroidJavaObject>("putExtra", "payload", Convert.ToBase64String(payload));
+                        intent.Call<AndroidJavaObject>("putExtra", "redirect_uri", "plemu://mwa-callback");
 
                         activity.Call("startActivity", intent);
                     }

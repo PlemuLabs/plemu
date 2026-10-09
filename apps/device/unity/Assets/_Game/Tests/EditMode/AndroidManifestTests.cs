@@ -177,5 +177,34 @@ namespace Plemu.Tests
             Assert.IsNotNull(metaData, "UnityPlayerActivity must declare meta-data 'unityplayer.UnityActivity'.");
             Assert.AreEqual("true", (string)metaData.Attribute(AndroidNs + "value"), "meta-data 'unityplayer.UnityActivity' must have value 'true'.");
         }
+
+        [Test]
+        public void Manifest_UnityPlayerActivity_HasDeepLinkIntentFilterForPlemuScheme()
+        {
+            Assert.IsNotNull(_document, "Document not loaded.");
+            XElement application = _document.Root.Element("application");
+            var unityActivity = application?.Elements("activity").FirstOrDefault(act =>
+                (string)act.Attribute(AndroidNs + "name") == "com.unity3d.player.UnityPlayerActivity");
+
+            Assert.IsNotNull(unityActivity, "UnityPlayerActivity required.");
+
+            var intentFilters = unityActivity.Elements("intent-filter");
+            bool hasDeepLink = intentFilters.Any(filter =>
+            {
+                var action = (string)filter.Element("action")?.Attribute(AndroidNs + "name");
+                var categoryDefault = filter.Elements("category").Any(c => (string)c.Attribute(AndroidNs + "name") == "android.intent.category.DEFAULT");
+                var categoryBrowsable = filter.Elements("category").Any(c => (string)c.Attribute(AndroidNs + "name") == "android.intent.category.BROWSABLE");
+                var dataScheme = (string)filter.Element("data")?.Attribute(AndroidNs + "scheme");
+                var dataHost = (string)filter.Element("data")?.Attribute(AndroidNs + "host");
+
+                return action == "android.intent.action.VIEW" &&
+                       categoryDefault &&
+                       categoryBrowsable &&
+                       dataScheme == "plemu" &&
+                       dataHost == "mwa-callback";
+            });
+
+            Assert.IsTrue(hasDeepLink, "UnityPlayerActivity must declare an <intent-filter> for 'plemu://mwa-callback' deep link returns.");
+        }
     }
 }
