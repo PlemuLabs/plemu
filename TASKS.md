@@ -66,11 +66,11 @@ Este documento divide o plano do PRD de **Integração Mobile Wallet Adapter (MW
      - Desconexão com purga completa de estado em memória.
   2. Suíte de testes unitários NUnit EditMode em `apps/device/unity/Assets/_Game/Tests/EditMode/MwaAdapterTests.cs` cobrindo todos os fluxos e cenários de borda do mock.
 - **Critérios de Aceitação:**
-  - [ ] `MockMwaAdapter` implementando `IMobileWalletAdapter` integralmente.
-  - [ ] Suporte a simulação de sucesso, cancelamento do usuário, falha e timeout via propriedades ou métodos configuráveis.
-  - [ ] Assinatura determinística com prefixo `MwaSig-devnet-` gerada de forma reproduzível.
-  - [ ] Purga de estado e invalidação de sessão ao chamar `DisconnectAsync()`.
-  - [ ] Suíte `MwaAdapterTests.cs` implementada com cobertura de 100% dos métodos e ramos do mock.
+  - [x] `MockMwaAdapter` implementando `IMobileWalletAdapter` integralmente.
+  - [x] Suporte a simulação de sucesso, cancelamento do usuário, falha e timeout via propriedades ou métodos configuráveis.
+  - [x] Assinatura determinística com prefixo `MwaSig-devnet-` gerada de forma reproduzível.
+  - [x] Purga de estado e invalidação de sessão ao chamar `DisconnectAsync()`.
+  - [x] Suíte `MwaAdapterTests.cs` implementada com cobertura de 100% dos métodos e ramos do mock.
 
 ---
 
