@@ -151,6 +151,38 @@ namespace Plemu.Tests
         }
 
         [Test]
+        public async Task SolanaSdkMwaAdapter_DisconnectAsync_PurgesVolatileTokens()
+        {
+            var bridge = new MockSolanaSdkBridge();
+            var adapter = new SolanaSdkMwaAdapter(bridge);
+
+            MwaConnectionResult result = await adapter.ConnectAsync();
+            Assert.IsTrue(result.IsSuccess);
+            Assert.IsTrue(adapter.IsConnected);
+            Assert.AreEqual("mock-sdk-token", adapter.CurrentAuthToken);
+
+            await adapter.DisconnectAsync();
+
+            Assert.IsFalse(adapter.IsConnected);
+            Assert.IsNull(adapter.CurrentAuthToken, "SolanaSdkMwaAdapter CurrentAuthToken must be null after disconnect");
+            Assert.IsNull(adapter.CurrentPublicKey, "SolanaSdkMwaAdapter CurrentPublicKey must be null after disconnect");
+        }
+
+        [Test]
+        public async Task SolanaSdkMwaAdapter_ToString_RedactsAuthToken()
+        {
+            var bridge = new MockSolanaSdkBridge();
+            bridge.ConfiguredAuthToken = "super-sensitive-sdk-token";
+            var adapter = new SolanaSdkMwaAdapter(bridge);
+
+            await adapter.ConnectAsync();
+            string output = adapter.ToString();
+
+            Assert.IsFalse(output.Contains("super-sensitive-sdk-token"), "ToString() must never reveal raw auth token in logs");
+            Assert.IsTrue(output.Contains("[REDACTED]"), "ToString() must explicitly mark auth token as [REDACTED]");
+        }
+
+        [Test]
         public void MwaConnectionResult_ToString_RedactsAuthToken()
         {
             const string secretToken = "super_confidential_session_token_xyz987";

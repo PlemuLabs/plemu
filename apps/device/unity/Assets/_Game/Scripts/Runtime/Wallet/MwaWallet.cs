@@ -11,14 +11,28 @@ namespace Plemu.Wallet
     public sealed class MwaWallet : IWallet
     {
         private readonly IMobileWalletAdapter _adapter;
+        private readonly IBlockhashProvider _blockhashProvider;
+        private readonly System.Threading.SemaphoreSlim _operationLock = new System.Threading.SemaphoreSlim(1, 1);
+        private readonly string _seatsProgramId;
+        private readonly string _marketProgramId;
         private string _publicKey;
         private string _authToken;
         private bool _isConnected;
 
-        public MwaWallet(IMobileWalletAdapter adapter)
+        public MwaWallet(
+            IMobileWalletAdapter adapter,
+            IBlockhashProvider blockhashProvider = null,
+            string seatsProgramId = null,
+            string marketProgramId = null)
         {
             _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
+            _blockhashProvider = blockhashProvider ?? new DefaultBlockhashProvider();
+            _seatsProgramId = seatsProgramId;
+            _marketProgramId = marketProgramId;
         }
+
+        /// <summary>Underlying mobile wallet adapter.</summary>
+        public IMobileWalletAdapter Adapter => _adapter;
 
         /// <summary>True if the user's wallet is currently connected.</summary>
         public bool IsConnected => _isConnected;
@@ -29,19 +43,32 @@ namespace Plemu.Wallet
         /// <summary>Requests a connection to the user's wallet through the adapter.</summary>
         public async Task<bool> Connect()
         {
-            MwaConnectionResult result = await _adapter.ConnectAsync();
-            if (result != null && result.IsSuccess)
+            await _operationLock.WaitAsync();
+            try
             {
-                _publicKey = result.PublicKey;
-                _authToken = result.AuthToken;
-                _isConnected = true;
-                return true;
-            }
+                if (_isConnected && !string.IsNullOrEmpty(_publicKey))
+                {
+                    return true;
+                }
 
-            _publicKey = null;
-            _authToken = null;
-            _isConnected = false;
-            return false;
+                MwaConnectionResult result = await _adapter.ConnectAsync();
+                if (result != null && result.IsSuccess)
+                {
+                    _publicKey = result.PublicKey;
+                    _authToken = result.AuthToken;
+                    _isConnected = true;
+                    return true;
+                }
+
+                _publicKey = null;
+                _authToken = null;
+                _isConnected = false;
+                return false;
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
         }
 
         /// <summary>
@@ -68,14 +95,22 @@ namespace Plemu.Wallet
         /// </summary>
         public async Task DisconnectAsync()
         {
-            _authToken = null;
-            _publicKey = null;
-            _isConnected = false;
-            await _adapter.DisconnectAsync();
+            await _operationLock.WaitAsync();
+            try
+            {
+                _authToken = null;
+                _publicKey = null;
+                _isConnected = false;
+                await _adapter.DisconnectAsync();
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
         }
 
         /// <summary>
-        /// Sends a direct tip to a recipient in PLEMU base units.
+        /// Sends a direct tip to a recipient in PLEMU base units via SPL Token TransferChecked.
         /// </summary>
         public async Task<string> SendTip(string recipientWallet, ulong amountBaseUnits)
         {
@@ -91,11 +126,42 @@ namespace Plemu.Wallet
                 throw new ArgumentException("Tip amount must be greater than zero.", nameof(amountBaseUnits));
             }
 
-            string payload = $"{{\"type\":\"tip\",\"from\":\"{_publicKey}\",\"to\":\"{recipientWallet}\",\"amount\":{amountBaseUnits}}}";
-            byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
+            if (!await _operationLock.WaitAsync(0))
+            {
+                throw new InvalidOperationException("A wallet operation is already in progress.");
+            }
 
-            MwaTransactionResult result = await _adapter.SignAndSendTransactionAsync(payloadBytes);
-            return HandleTransactionResult(result);
+            try
+            {
+                string sourceAta = SplTokenProgramInstructions.DeriveAssociatedTokenAccount(_publicKey, SplTokenProgramInstructions.PlemuMintAddress);
+                string destinationAta = SplTokenProgramInstructions.DeriveAssociatedTokenAccount(recipientWallet, SplTokenProgramInstructions.PlemuMintAddress);
+
+                string blockhash = await _blockhashProvider.GetRecentBlockhashAsync();
+
+                var createAtaInstruction = SplTokenProgramInstructions.CreateAssociatedTokenAccountIdempotent(
+                    fundingAccount: _publicKey,
+                    associatedTokenAccount: destinationAta,
+                    walletAddress: recipientWallet,
+                    tokenMintAddress: SplTokenProgramInstructions.PlemuMintAddress);
+
+                var transferInstruction = SplTokenProgramInstructions.TransferChecked(
+                    sourceAta,
+                    SplTokenProgramInstructions.PlemuMintAddress,
+                    destinationAta,
+                    _publicKey,
+                    amountBaseUnits,
+                    SplTokenProgramInstructions.PlemuDecimals);
+
+                var transaction = SolanaTransaction.Create(_publicKey, new[] { createAtaInstruction, transferInstruction }, blockhash);
+                byte[] payloadBytes = transaction.Serialize();
+
+                MwaTransactionResult result = await _adapter.SignAndSendTransactionAsync(payloadBytes);
+                return HandleTransactionResult(result);
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
         }
 
         /// <summary>
@@ -110,11 +176,25 @@ namespace Plemu.Wallet
                 throw new ArgumentException("Pack ID cannot be null or empty.", nameof(packId));
             }
 
-            string payload = $"{{\"type\":\"purchase_seat\",\"buyer\":\"{_publicKey}\",\"pack_id\":\"{packId}\",\"max_price\":{maxPriceBaseUnits}}}";
-            byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
+            if (!await _operationLock.WaitAsync(0))
+            {
+                throw new InvalidOperationException("A wallet operation is already in progress.");
+            }
 
-            MwaTransactionResult result = await _adapter.SignAndSendTransactionAsync(payloadBytes);
-            return HandleTransactionResult(result);
+            try
+            {
+                string blockhash = await _blockhashProvider.GetRecentBlockhashAsync();
+                var instruction = PlemuProgramInstructions.PurchaseSeat(_publicKey, packId, maxPriceBaseUnits, _seatsProgramId);
+                var transaction = SolanaTransaction.Create(_publicKey, new[] { instruction }, blockhash);
+                byte[] payloadBytes = transaction.Serialize();
+
+                MwaTransactionResult result = await _adapter.SignAndSendTransactionAsync(payloadBytes);
+                return HandleTransactionResult(result);
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
         }
 
         /// <summary>
@@ -129,11 +209,25 @@ namespace Plemu.Wallet
                 throw new ArgumentException("Entry ID cannot be null or empty.", nameof(entryId));
             }
 
-            string payload = $"{{\"type\":\"purchase_listing\",\"buyer\":\"{_publicKey}\",\"entry_id\":\"{entryId}\",\"max_price\":{maxPriceBaseUnits}}}";
-            byte[] payloadBytes = Encoding.UTF8.GetBytes(payload);
+            if (!await _operationLock.WaitAsync(0))
+            {
+                throw new InvalidOperationException("A wallet operation is already in progress.");
+            }
 
-            MwaTransactionResult result = await _adapter.SignAndSendTransactionAsync(payloadBytes);
-            return HandleTransactionResult(result);
+            try
+            {
+                string blockhash = await _blockhashProvider.GetRecentBlockhashAsync();
+                var instruction = PlemuProgramInstructions.PurchaseListing(_publicKey, entryId, maxPriceBaseUnits, _marketProgramId);
+                var transaction = SolanaTransaction.Create(_publicKey, new[] { instruction }, blockhash);
+                byte[] payloadBytes = transaction.Serialize();
+
+                MwaTransactionResult result = await _adapter.SignAndSendTransactionAsync(payloadBytes);
+                return HandleTransactionResult(result);
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
         }
 
         private void EnsureConnected()

@@ -46,7 +46,7 @@ namespace Plemu.Tests
 
             Assert.IsTrue(result.IsSuccess);
             Assert.IsFalse(result.IsCancelled);
-            Assert.AreEqual("MwaWa11etDevnet111111111111111111111111111", result.PublicKey);
+            Assert.AreEqual(MockMwaAdapter.DefaultMockPublicKey, result.PublicKey);
             Assert.AreEqual("mock-mwa-auth-token-devnet", result.AuthToken);
             Assert.IsNull(result.ErrorMessage);
             Assert.IsTrue(_adapter.IsConnectedSession);

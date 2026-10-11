@@ -179,13 +179,57 @@ namespace Plemu.Tests
         }
 
         [Test]
+        public void CreateAndroidWallet_WhenSdkBridgeProvidedAndAvailable_ReturnsMwaWalletWithSolanaSdkAdapter()
+        {
+            var sdkBridge = new MockSolanaSdkBridge { IsAvailable = true };
+            IWallet wallet = WalletFactory.CreateAndroidWallet(sdkBridge: sdkBridge);
+
+            Assert.IsNotNull(wallet);
+            Assert.IsInstanceOf<MwaWallet>(wallet);
+            if (wallet is MwaWallet mwaWallet)
+            {
+                Assert.IsInstanceOf<SolanaSdkMwaAdapter>(mwaWallet.Adapter);
+            }
+        }
+
+        [Test]
+        public void CreateAndroidWallet_PrioritizesSolanaSdkOverJniWhenBothAvailable()
+        {
+            var sdkBridge = new MockSolanaSdkBridge { IsAvailable = true };
+            var jniBridge = new TestJniBridge { SchemeAvailableResult = true };
+            IWallet wallet = WalletFactory.CreateAndroidWallet(bridge: jniBridge, sdkBridge: sdkBridge);
+
+            Assert.IsNotNull(wallet);
+            Assert.IsInstanceOf<MwaWallet>(wallet);
+            if (wallet is MwaWallet mwaWallet)
+            {
+                Assert.IsInstanceOf<SolanaSdkMwaAdapter>(mwaWallet.Adapter);
+            }
+        }
+
+        [Test]
+        public void CreateAndroidWallet_FallsBackToJniWhenSdkBridgeUnavailable()
+        {
+            var sdkBridge = new MockSolanaSdkBridge { IsAvailable = false };
+            var jniBridge = new TestJniBridge { SchemeAvailableResult = true };
+            IWallet wallet = WalletFactory.CreateAndroidWallet(bridge: jniBridge, sdkBridge: sdkBridge);
+
+            Assert.IsNotNull(wallet);
+            Assert.IsInstanceOf<MwaWallet>(wallet);
+            if (wallet is MwaWallet mwaWallet)
+            {
+                Assert.IsInstanceOf<AndroidMwaAdapter>(mwaWallet.Adapter);
+            }
+        }
+
+        [Test]
         public async Task CreateWallet_Default_ExecutesCommercialOperationsSuccessfully()
         {
             IWallet wallet = WalletFactory.CreateWallet();
             bool connected = await wallet.Connect();
             Assert.IsTrue(connected);
 
-            string tipSig = await wallet.SendTip("RecipientWallet1111111111111111111111111111", 500);
+            string tipSig = await wallet.SendTip("4PEcHxY379hy7BzJRvdqcKgFgXBf1FuPDBS47bm81JBL", 500);
             Assert.IsNotNull(tipSig);
             Assert.IsTrue(tipSig.StartsWith("MwaSig-devnet-"));
 

@@ -9,11 +9,11 @@ namespace Plemu.Tests
         [Test]
         public void MwaConnectionResult_Ok_SetsSuccessAndPropertiesCorrectly()
         {
-            var result = MwaConnectionResult.Ok("MwaWa11etDevnet111111111111111111111111111", "auth-token-xyz");
+            var result = MwaConnectionResult.Ok("FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm", "auth-token-xyz");
 
             Assert.IsTrue(result.IsSuccess);
             Assert.IsFalse(result.IsCancelled);
-            Assert.AreEqual("MwaWa11etDevnet111111111111111111111111111", result.PublicKey);
+            Assert.AreEqual("FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm", result.PublicKey);
             Assert.AreEqual("auth-token-xyz", result.AuthToken);
             Assert.IsNull(result.ErrorMessage);
         }

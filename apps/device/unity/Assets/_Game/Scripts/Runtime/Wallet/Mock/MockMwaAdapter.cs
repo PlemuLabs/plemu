@@ -21,7 +21,8 @@ namespace Plemu.Wallet.Mock
         public bool SimulateFailure { get; set; } = false;
         public string CancellationReason { get; set; } = "User cancelled authorization";
         public string FailureMessage { get; set; } = "Seed Vault authentication failed";
-        public string MockPublicKey { get; set; } = "MwaWa11etDevnet111111111111111111111111111";
+        public const string DefaultMockPublicKey = "FmRd9UgYykiVCXhhJv53trpZvnKNAiF6BxEbZeCYRmkm";
+        public string MockPublicKey { get; set; } = DefaultMockPublicKey;
         public string MockAuthToken { get; set; } = "mock-mwa-auth-token-devnet";
 
         public bool IsConnectedSession => _isConnected;

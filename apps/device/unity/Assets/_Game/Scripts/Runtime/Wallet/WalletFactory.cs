@@ -48,12 +48,45 @@ namespace Plemu.Wallet
         }
 
         /// <summary>
-        /// Creates an IWallet for Android devices. Detects MWA/Seed Vault presence and returns MwaWallet if available;
-        /// falls back to MockWallet if MWA is not detected or unavailable.
+        /// Creates an IWallet for Android devices using the official Solana Unity SDK transport (WebSocket MWA 2.0).
+        /// Prioritizes SolanaSdkMwaAdapter when available, falling back to AndroidMwaAdapter (native JNI Intent),
+        /// or MockWallet if no hardware wallet adapter is detected.
         /// </summary>
-        public static IWallet CreateAndroidWallet(IAndroidJniBridge bridge = null)
+        public static IWallet CreateAndroidWallet(IAndroidJniBridge bridge = null, ISolanaSdkBridge sdkBridge = null)
         {
-            var adapter = new AndroidMwaAdapter(bridge);
+            if (sdkBridge != null)
+            {
+                var sdkAdapter = new SolanaSdkMwaAdapter(sdkBridge);
+                if (sdkAdapter.IsMwaAvailable())
+                {
+                    return new MwaWallet(sdkAdapter);
+                }
+            }
+
+            if (sdkBridge == null && bridge == null)
+            {
+                var defaultSdkAdapter = new SolanaSdkMwaAdapter();
+                if (defaultSdkAdapter.IsMwaAvailable())
+                {
+                    return new MwaWallet(defaultSdkAdapter);
+                }
+            }
+
+            var jniAdapter = new AndroidMwaAdapter(bridge);
+            if (jniAdapter.IsMwaAvailable())
+            {
+                return new MwaWallet(jniAdapter);
+            }
+
+            return new MockWallet();
+        }
+
+        /// <summary>
+        /// Creates an IWallet for Android devices using the official Solana Unity SDK transport.
+        /// </summary>
+        public static IWallet CreateSolanaSdkWallet(ISolanaSdkBridge bridge = null)
+        {
+            var adapter = new SolanaSdkMwaAdapter(bridge);
             if (adapter.IsMwaAvailable())
             {
                 return new MwaWallet(adapter);
@@ -70,6 +103,19 @@ namespace Plemu.Wallet
             if (isAndroidPlatform)
             {
                 return CreateAndroidWallet(bridge);
+            }
+
+            return CreateEditorWallet();
+        }
+
+        /// <summary>
+        /// Resolves an IWallet using either native JNI or the official Solana Unity SDK transport.
+        /// </summary>
+        public static IWallet ResolveWallet(bool isAndroidPlatform, bool useSolanaSdk, ISolanaSdkBridge sdkBridge = null, IAndroidJniBridge jniBridge = null)
+        {
+            if (isAndroidPlatform)
+            {
+                return useSolanaSdk ? CreateSolanaSdkWallet(sdkBridge) : CreateAndroidWallet(jniBridge);
             }
 
             return CreateEditorWallet();
