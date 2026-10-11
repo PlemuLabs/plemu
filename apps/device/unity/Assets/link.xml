@@ -1,0 +1,13 @@
+<linker>
+  <!-- Preserve Newtonsoft.Json for MWA JSON-RPC DTOs and dynamic payloads -->
+  <assembly fullname="Newtonsoft.Json" preserve="all" />
+
+  <!-- Preserve Plemu Wallet runtime types and serialization structures -->
+  <assembly fullname="Plemu.Wallet" preserve="all" />
+
+  <!-- Preserve official Solana Unity SDK assemblies and RPC models against IL2CPP stripping -->
+  <assembly fullname="Solana.Unity.SDK" preserve="all" />
+  <assembly fullname="Solana.Unity.Rpc" preserve="all" />
+  <assembly fullname="Solana.Unity.Wallet" preserve="all" />
+  <assembly fullname="Solana.Unity.Programs" preserve="all" />
+</linker>
