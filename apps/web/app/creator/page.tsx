@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { formatUsdc, parseUsdc } from "../commerce";
+import { WalletHeaderButton } from "../../components/WalletHeaderButton";
+import { usePlemuAuth } from "../../hooks/usePlemuAuth";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { SOLANA_CONFIG } from "../../lib/solana-config";
+import { getExplorerUrl } from "../../lib/solana-utils";
 import "./creator.css";
 
 type Tab =
@@ -117,6 +122,65 @@ export default function Creator() {
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("Todas");
   const [profile, setProfile] = useState({ name: "", bio: "", website: "" });
+
+  const {
+    isConnected,
+    base58Address,
+    shortAddress,
+    solBalance,
+    usdcBalanceFormatted,
+    isLoadingBalance,
+    refreshBalances,
+    disconnect,
+  } = usePlemuAuth();
+  const { setVisible } = useWalletModal();
+  const [copiedWallet, setCopiedWallet] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleCopyWallet = async () => {
+    if (!base58Address) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(base58Address);
+      } else if (typeof document !== "undefined") {
+        const textarea = document.createElement("textarea");
+        textarea.value = base58Address;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setCopiedWallet(true);
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = setTimeout(() => {
+        setCopiedWallet(false);
+      }, 2000);
+    } catch {
+      // Silently handle clipboard write error
+    }
+  };
+
+  const handleOpenConnect = () => {
+    if (typeof document !== "undefined") {
+      document.querySelectorAll("dialog[open]").forEach((d) => {
+        if (d instanceof HTMLDialogElement) d.close();
+      });
+    }
+    setVisible(true);
+  };
   useEffect(() => {
     const sync = () => {
       const target = location.hash.slice(1);
@@ -253,15 +317,18 @@ export default function Creator() {
         : formatUsdc(parseUsdc(draft.price)!);
   const pageTitle = navigation.find((n) => n.id === tab)?.label;
   return (
-    <div className="creator-app">
+    <div className="creator-app" lang="pt-BR">
       <header className="creator-header">
         <Link href="/" className="brand">
           PLEMU<span className="purple-text">✦</span>
         </Link>
         <span className="creator-wordmark">CREATOR STUDIO</span>
-        <Link href="/" className="studio-back">
-          VOLTAR À LOJA
-        </Link>
+        <div className="creator-header-actions">
+          <WalletHeaderButton />
+          <Link href="/" className="studio-back">
+            VOLTAR À LOJA
+          </Link>
+        </div>
       </header>
       <div className="studio-layout">
         <aside className="studio-sidebar">
@@ -822,17 +889,116 @@ export default function Creator() {
               </div>
               <div className="studio-columns">
                 <section className="studio-panel">
-                  <h2>Carteira de recebimento</h2>
-                  <p>
-                    As receitas serão em USDC na Solana. A carteira precisará
-                    ser conectada e sua titularidade verificada.
-                  </p>
-                  <div className="wallet-placeholder">
-                    ◇ CARTEIRA NÃO CONECTADA
-                  </div>
-                  <button disabled className="button secondary">
-                    CONEXÃO EM BREVE
-                  </button>
+                  {!isConnected ? (
+                    <>
+                      <h2>Carteira de recebimento</h2>
+                      <p>
+                        As receitas serão em USDC na Solana. A carteira
+                        precisará ser conectada e sua titularidade verificada.
+                      </p>
+                      <div className="wallet-placeholder">
+                        ◇ CARTEIRA NÃO CONECTADA
+                      </div>
+                      <button
+                        type="button"
+                        className="button primary"
+                        onClick={handleOpenConnect}
+                      >
+                        CONECTAR CARTEIRA DE RECEBIMENTO
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="wallet-panel-header">
+                        <h2>Carteira de recebimento</h2>
+                        <span className="draft-status connected">
+                          ● CONECTADA
+                        </span>
+                      </div>
+                      <p>
+                        Sua carteira Solana está conectada e configurada para o
+                        recebimento de repasses em USDC na Devnet.
+                      </p>
+                      <div className="wallet-connected-info">
+                        <div className="wallet-detail-row">
+                          <span className="wallet-label">ENDEREÇO</span>
+                          <div className="wallet-address-container">
+                            <strong
+                              className="wallet-mono-address"
+                              title={base58Address || ""}
+                            >
+                              {shortAddress}
+                            </strong>
+                            <button
+                              type="button"
+                              className="text-button copy-wallet-btn"
+                              onClick={handleCopyWallet}
+                            >
+                              {copiedWallet ? "COPIADO!" : "COPIAR"}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="wallet-detail-row">
+                          <span className="wallet-label">SOLANA EXPLORER</span>
+                          <a
+                            href={
+                              base58Address
+                                ? getExplorerUrl(
+                                    SOLANA_CONFIG.network,
+                                    "address",
+                                    base58Address,
+                                  )
+                                : "#"
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-button explorer-link"
+                          >
+                            VER NO EXPLORER ↗
+                          </a>
+                        </div>
+                        <div className="wallet-detail-row">
+                          <span className="wallet-label">SALDO SOL</span>
+                          <strong className="mint-text">
+                            {isLoadingBalance
+                              ? "CARREGANDO..."
+                              : solBalance !== null
+                                ? `${solBalance.toFixed(2)} SOL`
+                                : "—"}
+                          </strong>
+                        </div>
+                        <div className="wallet-detail-row">
+                          <span className="wallet-label">
+                            SALDO USDC ({SOLANA_CONFIG.network.toUpperCase()})
+                          </span>
+                          <strong className="purple-text">
+                            {isLoadingBalance
+                              ? "CARREGANDO..."
+                              : usdcBalanceFormatted || "--- USDC"}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="wallet-actions">
+                        <button
+                          type="button"
+                          className="button secondary"
+                          onClick={() => refreshBalances(true)}
+                          disabled={isLoadingBalance}
+                        >
+                          {isLoadingBalance
+                            ? "ATUALIZANDO..."
+                            : "ATUALIZAR SALDOS"}
+                        </button>
+                        <button
+                          type="button"
+                          className="button secondary disconnect-btn"
+                          onClick={() => disconnect()}
+                        >
+                          DESCONECTAR
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </section>
                 <section className="studio-panel">
                   <h2>Repasses</h2>

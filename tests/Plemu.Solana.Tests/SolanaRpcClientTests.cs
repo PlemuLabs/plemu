@@ -346,4 +346,493 @@ public class SolanaRpcClientTests
         // Multiple dispose should not throw
         client.Dispose();
     }
+
+    [Fact]
+    public async Task GetBalanceAsync_WhenAccountExists_ReturnsLamports()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {
+                            "context": { "slot": 100 },
+                            "value": 5000000
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        ulong balance = await client.GetBalanceAsync("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V");
+
+        Assert.Equal(5000000UL, balance);
+        Assert.Contains("getBalance", handler.LastRequestBody);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task GetBalanceAsync_NullOrWhitespace_ThrowsArgumentException(string? pubkey)
+    {
+        var client = new SolanaRpcClient("http://localhost:8899");
+        await Assert.ThrowsAsync<ArgumentException>(() => client.GetBalanceAsync(pubkey!));
+    }
+
+    [Fact]
+    public async Task GetBalanceAsync_WhenRpcReturnsJsonRpcError_ThrowsInvalidOperationException()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "error": {
+                            "code": -32602,
+                            "message": "Invalid params"
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            client.GetBalanceAsync("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V"));
+    }
+
+    [Fact]
+    public async Task GetBalanceAsync_WhenResultMissingValue_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {},
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        ulong balance = await client.GetBalanceAsync("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V");
+
+        Assert.Equal(0UL, balance);
+    }
+
+    [Fact]
+    public async Task GetBalanceAsync_WhenResultMissingEntirely_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        ulong balance = await client.GetBalanceAsync("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V");
+
+        Assert.Equal(0UL, balance);
+    }
+
+    [Fact]
+    public async Task GetBalanceAsync_WhenValueNotNumber_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": { "value": "not-a-number" },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        ulong balance = await client.GetBalanceAsync("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V");
+
+        Assert.Equal(0UL, balance);
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenTokenAccountsExist_ReturnsSumOfBalances()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {
+                            "context": { "slot": 100 },
+                            "value": [
+                                {
+                                    "pubkey": "Ata1Pubkey",
+                                    "account": {
+                                        "data": {
+                                            "parsed": {
+                                                "info": {
+                                                    "tokenAmount": {
+                                                        "amount": "15000000",
+                                                        "decimals": 6,
+                                                        "uiAmount": 15.0,
+                                                        "uiAmountString": "15.0"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "pubkey": "Ata2Pubkey",
+                                    "account": {
+                                        "data": {
+                                            "parsed": {
+                                                "info": {
+                                                    "tokenAmount": {
+                                                        "amount": "5500000",
+                                                        "decimals": 6,
+                                                        "uiAmount": 5.5,
+                                                        "uiAmountString": "5.5"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(20.5m, balance);
+        Assert.Contains("getTokenAccountsByOwner", handler.LastRequestBody);
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenUiAmountStringMissing_FallsBackToUiAmountNumber()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {
+                            "context": { "slot": 100 },
+                            "value": [
+                                {
+                                    "account": {
+                                        "data": {
+                                            "parsed": {
+                                                "info": {
+                                                    "tokenAmount": {
+                                                        "amount": "1000000",
+                                                        "decimals": 6,
+                                                        "uiAmount": 1.0
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(1.0m, balance);
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenValueIsEmptyArray_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {
+                            "context": { "slot": 100 },
+                            "value": []
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(0.0m, balance);
+    }
+
+    [Theory]
+    [InlineData(null, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")]
+    [InlineData("", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")]
+    [InlineData("   ", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")]
+    [InlineData("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V", null)]
+    [InlineData("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V", "")]
+    [InlineData("7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V", "   ")]
+    public async Task GetTokenBalanceAsync_NullOrWhitespace_ThrowsArgumentException(string? wallet, string? mint)
+    {
+        var client = new SolanaRpcClient("http://localhost:8899");
+        await Assert.ThrowsAsync<ArgumentException>(() => client.GetTokenBalanceAsync(wallet!, mint!));
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenRpcReturnsJsonRpcError_ThrowsInvalidOperationException()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "error": {
+                            "code": -32602,
+                            "message": "Invalid params"
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            client.GetTokenBalanceAsync(
+                "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+                "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"));
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenResultMissingValue_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {},
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(0.0m, balance);
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenResultMissingEntirely_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(0.0m, balance);
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenAccountItemMalformed_SkipsItemAndReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": {
+                            "value": [
+                                { "pubkey": "AtaNoData" },
+                                {
+                                    "pubkey": "AtaMalformed",
+                                    "account": {
+                                        "data": {
+                                            "parsed": {
+                                                "info": {
+                                                    "tokenAmount": {
+                                                        "uiAmountString": "not-a-decimal",
+                                                        "uiAmount": null
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(0.0m, balance);
+    }
+
+    [Fact]
+    public async Task GetTokenBalanceAsync_WhenValueNotArray_ReturnsZero()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ResponseFactory = _ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                        "jsonrpc": "2.0",
+                        "result": { "value": "not-an-array" },
+                        "id": 1
+                    }
+                    """,
+                    Encoding.UTF8,
+                    "application/json")
+            }
+        };
+
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8899") };
+        var client = new SolanaRpcClient(httpClient);
+
+        decimal balance = await client.GetTokenBalanceAsync(
+            "7nxQB5HhFhR4Xf9M1Wj7mP3W7T8c6Z5G4Y2W1Q9M8P7V",
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+        Assert.Equal(0.0m, balance);
+    }
 }

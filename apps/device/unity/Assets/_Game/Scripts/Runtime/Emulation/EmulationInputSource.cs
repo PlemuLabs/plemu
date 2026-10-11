@@ -20,6 +20,9 @@ namespace Plemu.Emulation
         /// <summary>Probe for whether a key is currently held. Overridable for tests.</summary>
         public System.Func<KeyCode, bool> KeyProbe { get; set; } = DefaultKeyProbe;
 
+        /// <summary>Physical gamepad / PSG1 input provider.</summary>
+        public PSG1InputSource GamepadSource { get; set; } = new PSG1InputSource();
+
         /// <summary>The most recently published bitmask (diagnostic).</summary>
         public ushort LastMask { get; private set; }
 
@@ -36,6 +39,11 @@ namespace Plemu.Emulation
                 return;
 
             ushort mask = _mapping.ToBitmask(KeyProbe);
+            if (GamepadSource != null)
+            {
+                mask |= GamepadSource.ToBitmask();
+            }
+
             LastMask = mask;
             _session.SetInput(mask);
         }

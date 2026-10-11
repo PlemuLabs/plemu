@@ -1,0 +1,1057 @@
+/* Seeker uses Android display scaling: these are logical CSS widths, not panel pixels.
+   The handheld shell also covers landscape phones and narrow tablet windows. */
+.handheld-nav {
+  display: none;
+}
+.handheld-menu {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.handheld-menu a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 50px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.handheld-menu a[aria-current="page"] {
+  color: var(--green);
+  border-color: var(--green);
+  background: #424b1626;
+}
+.row-cap small,
+.row-volume small {
+  display: none;
+}
+.wallet-provider-note {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.wallet-provider-note small {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.console-touch-hint {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  :root {
+    --handheld-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+  html {
+    scroll-padding-top: 80px;
+    scroll-padding-bottom: var(--handheld-bottom);
+  }
+  body {
+    padding-bottom: var(--handheld-bottom);
+  }
+  .site-header {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    height: auto;
+    min-height: 62px;
+    padding: calc(8px + env(safe-area-inset-top, 0px))
+      max(16px, env(safe-area-inset-right, 0px)) 8px
+      max(16px, env(safe-area-inset-left, 0px));
+    gap: 12px;
+    background: #121418;
+    backdrop-filter: none;
+  }
+  .site-header .desktop-nav,
+  .site-header .mobile-menu {
+    display: none;
+  }
+  .site-header .logo {
+    font-size: 25px;
+    gap: 7px;
+  }
+  .site-header .brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .header-actions {
+    margin: 0;
+    gap: 8px;
+  }
+  .header-actions .search-trigger {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  .search-trigger span,
+  .search-trigger kbd {
+    display: none;
+  }
+  .header-actions .wallet-button {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .handheld-nav {
+    position: fixed;
+    z-index: 80;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 6px max(8px, env(safe-area-inset-right, 0px))
+      calc(6px + env(safe-area-inset-bottom, 0px))
+      max(8px, env(safe-area-inset-left, 0px));
+    background: #15171f;
+    border-top: 1px solid #8c76db45;
+    box-shadow: 0 -6px 24px #0003;
+  }
+  .handheld-nav a,
+  .handheld-nav button {
+    color: #b5b8c1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 56px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    font: 500 11px/1.2 var(--body);
+    text-decoration: none;
+  }
+  .handheld-nav [aria-current="page"],
+  .handheld-nav .active {
+    color: var(--green);
+    background: #424b163d;
+  }
+  .handheld-nav a[href="/create"] svg {
+    color: var(--accent-soft);
+  }
+  .toast {
+    bottom: calc(var(--handheld-bottom) + 12px);
+    max-width: calc(100% - 32px);
+  }
+  .product-dialog {
+    max-height: calc(
+      100dvh - 32px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
+    width: min(540px, calc(100% - 24px));
+    padding: 20px;
+    overscroll-behavior: contain;
+    border-radius: 16px;
+  }
+  .dialog-top {
+    position: sticky;
+    top: -20px;
+    z-index: 3;
+    padding-block: 12px;
+    background: var(--surface);
+  }
+  .dialog-top .icon-button,
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .game-categories,
+  .filter-bar,
+  .section-tabs,
+  .pack-selector {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scroll-padding-inline: 8px;
+  }
+  .game-categories {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-block: 8px 14px;
+  }
+  .game-categories button {
+    flex: 0 0 auto;
+    min-height: 48px;
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+  .game-categories button small {
+    font-size: 11px;
+  }
+  .filter-bar {
+    flex-wrap: nowrap;
+    padding-block: 8px;
+    gap: 8px;
+  }
+  .filter-bar button,
+  .section-tabs button {
+    flex-shrink: 0;
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .filter-bar > span {
+    white-space: nowrap;
+  }
+  .round-control,
+  .collectible-stack-controls button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  .button {
+    min-height: 48px;
+  }
+  .game-categories [aria-pressed="true"] {
+    border-color: var(--green);
+    background: #424b164d;
+    color: var(--green);
+  }
+  .console-touch-hint {
+    display: block;
+    font: 11px/1.6 var(--mono);
+    text-align: center;
+    color: var(--muted);
+    margin: 14px 0 0;
+  }
+  .control-guide {
+    display: none;
+  }
+  .console-display {
+    touch-action: pan-y;
+  }
+  .console-depth {
+    transform: translateX(var(--touch-x, 0px)) rotate(var(--touch-tilt, 0deg));
+    transition: transform 0.2s ease-out;
+  }
+}
+
+@media (max-width: 700px) {
+  .page-container {
+    width: auto;
+    margin-inline: 18px;
+    padding-inline: 0;
+  }
+  .inner-page {
+    padding-top: 28px;
+  }
+  .page-title {
+    margin-bottom: 24px;
+  }
+  .page-title h1 {
+    font-size: clamp(32px, 8vw, 42px);
+    line-height: 1.12;
+  }
+  .page-title p {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .eyebrow {
+    line-height: 1.6;
+  }
+  .play-hero {
+    padding-top: 34px;
+  }
+  .play-hero-copy {
+    padding-top: 0;
+  }
+  .play-hero-copy > .eyebrow {
+    font-size: 9px;
+  }
+  .play-hero-copy > p {
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .game-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .game-card .card-art {
+    height: auto;
+    aspect-ratio: 16 / 10;
+  }
+  .game-card .card-info {
+    padding: 18px;
+  }
+  .game-card .card-name > a {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+  .game-card .card-price > strong {
+    font-size: 27px;
+  }
+  .game-card .card-name > span,
+  .game-card .card-price > span {
+    font-size: 13px;
+  }
+  .game-card .platform-badge {
+    font-size: 11px;
+  }
+  .game-card .card-foot {
+    font-size: 11px;
+  }
+  .game-card .save-button {
+    width: 44px;
+    height: 44px;
+  }
+  .game-card .card-open {
+    opacity: 1;
+    transform: none;
+  }
+  .game-discovery-info .quote-value {
+    font-size: 27px;
+  }
+  .game-discovery-info .game-quote > :is(.positive, .negative) {
+    font-size: 13px;
+  }
+  .game-discovery-info p {
+    font-size: 14px;
+  }
+  .game-discovery-info > a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .game-price,
+  .game-quote {
+    max-width: 100%;
+  }
+  .market-page .market-highlights {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    scroll-snap-type: x proximity;
+    padding-bottom: 12px;
+  }
+  .market-page .market-highlight {
+    flex: 0 0 88%;
+    min-width: 0;
+    scroll-snap-align: start;
+    padding: 18px;
+  }
+  .market-highlight strong {
+    font-size: 16px;
+  }
+  .market-highlight .eyebrow {
+    font-size: 10px;
+  }
+  .market-toolbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .market-toolbar .search-field {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+  .market-toolbar .sort-select {
+    flex: 1;
+    min-width: 0;
+  }
+  .view-switch button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  /* The same market row becomes a labelled, readable mobile card. */
+  .market-table {
+    overflow: visible;
+    min-width: 0;
+  }
+  .market-table-head {
+    display: none;
+  }
+  .market-table .market-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px 12px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: #191b25;
+    min-width: 0;
+  }
+  .market-row .row-game {
+    grid-column: 1 / -1;
+    gap: 10px;
+  }
+  .market-row .row-game img {
+    width: 52px;
+    height: 52px;
+    border-radius: 7px;
+  }
+  .market-row .row-game strong {
+    font-size: 16px;
+  }
+  .market-row .row-game small {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .market-row .row-rank {
+    font-size: 11px;
+  }
+  .market-table .market-row > .row-price {
+    font-size: 25px;
+  }
+  .market-table .market-row > .positive,
+  .market-table .market-row > .negative {
+    display: block;
+    font-size: 13px;
+    align-self: center;
+  }
+  .market-table .market-row > .row-cap,
+  .market-table .market-row > .row-volume {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 14px;
+  }
+  .row-cap small,
+  .row-volume small {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .market-row .row-volume {
+    text-align: right;
+  }
+  .market-table .market-row > .chart {
+    display: none;
+  }
+  .psg-story {
+    padding-block: 38px;
+  }
+  .psg-title h2 {
+    font-size: 32px;
+  }
+  .psg-title p {
+    font-size: 14px;
+  }
+  .console-scene {
+    min-height: 0;
+    padding-top: 20px;
+    padding-bottom: 0;
+  }
+  .console-annotation {
+    display: none;
+  }
+  .psg-console {
+    width: min(332px, calc(100vw - 56px));
+    padding: 10px 12px 16px;
+    transform: rotate(-1.5deg);
+  }
+  .shoulder-controls {
+    margin-bottom: 8px;
+  }
+  .shoulder-controls button {
+    width: 48px;
+    height: 44px;
+  }
+  .console-display {
+    height: 235px;
+  }
+  .console-controls {
+    margin: 14px 0 0;
+    gap: 4px;
+  }
+  .dpad {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+  }
+  .dpad button {
+    font-size: 14px;
+  }
+  .console-emblem {
+    display: none;
+  }
+  .face-buttons {
+    width: 124px;
+    height: 124px;
+    transform: none;
+  }
+  .face-buttons button {
+    width: 44px;
+    height: 44px;
+    font-size: 14px;
+  }
+  .face-x {
+    left: 40px;
+    top: 0;
+  }
+  .face-y {
+    left: 0;
+    top: 40px;
+  }
+  .face-a {
+    left: 80px;
+    top: 40px;
+  }
+  .face-b {
+    left: 40px;
+    top: 80px;
+  }
+  .console-start {
+    margin-top: 5px;
+    gap: 16px;
+  }
+  .console-start button {
+    min-height: 44px;
+    min-width: 52px;
+    font-size: 9px;
+  }
+  .console-sticks {
+    margin-top: 4px;
+  }
+  .console-footnote {
+    font-size: 9px;
+    line-height: 1.6;
+    max-width: 300px;
+    margin: 18px auto;
+  }
+  .console-touch-controls {
+    margin-top: 10px;
+  }
+  .console-touch-controls select {
+    min-height: 48px;
+    font-size: 14px;
+  }
+  .console-mode button {
+    min-height: 48px;
+    font-size: 14px;
+  }
+  .console-info {
+    padding: 16px;
+  }
+  .console-info h3 {
+    font-size: 19px;
+  }
+  .console-info p {
+    font-size: 12px;
+    margin-block: 8px;
+  }
+  .console-info a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .console-metadata > .game-quote .quote-value {
+    font-size: 29px;
+  }
+  .console-metadata .game-quote > :is(.positive, .negative) {
+    font-size: 13px;
+  }
+  .console-metadata .world-tags span {
+    font-size: 11px;
+  }
+  .collectible-card-inner {
+    grid-template-rows: 12px 28px minmax(0, 1fr) 18px 56px 28px 10px;
+  }
+  .collectible-card-inner h3 {
+    font-size: 19px;
+  }
+  .collectible-card-type,
+  .collectible-card-type .platform-badge {
+    font-size: 9px;
+  }
+  .collectible-card-quote .quote-value {
+    font-size: 25px;
+  }
+  .collectible-card-quote .game-quote > :is(.positive, .negative) {
+    font-size: 12px;
+  }
+  .pack-selector button {
+    min-height: 56px;
+    font-size: 13px;
+    padding-inline: 14px;
+  }
+  .pack-selector {
+    scroll-snap-type: x proximity;
+  }
+  .pack-selector button {
+    scroll-snap-align: start;
+  }
+  .pack-opening {
+    padding: 24px 14px;
+  }
+  .pack-contents strong {
+    font-size: 15px;
+  }
+  .pack-contents .game-quote {
+    font-size: 12px;
+  }
+  .tear-hint {
+    font-size: 11px;
+  }
+  /* Full game information remains below the chart; avoid duplicating the long intro. */
+  .game-first-intro,
+  .economy-divider {
+    display: none;
+  }
+  .detail-breadcrumb {
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+  .detail-data-note {
+    width: 100%;
+    font-size: 9px;
+  }
+  .game-banner {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding-top: 190px;
+    background: #191b25;
+  }
+  .game-banner > img {
+    height: 235px !important;
+  }
+  .banner-shade {
+    height: 240px;
+    background: linear-gradient(transparent 40%, #191b25);
+  }
+  .game-banner-copy {
+    position: relative;
+    inset: auto;
+    padding: 0 20px;
+  }
+  .game-banner h1 {
+    font-size: 32px;
+    line-height: 1.1;
+  }
+  .game-banner-copy .quote-value {
+    font-size: 30px;
+  }
+  .game-banner-copy .game-quote > :is(.positive, .negative) {
+    font-size: 14px;
+  }
+  .game-banner-copy p {
+    display: none;
+  }
+  .banner-badges > span:last-child {
+    font-size: 9px;
+  }
+  .banner-actions {
+    position: relative;
+    inset: auto;
+    padding: 20px;
+    flex-wrap: wrap;
+  }
+  .banner-actions .button {
+    flex: 1 1 130px;
+    font-size: 13px;
+    padding: 12px;
+    min-height: 48px;
+  }
+  .terminal-layout {
+    display: block;
+    margin-top: 20px;
+  }
+  .terminal-main {
+    display: block;
+    min-width: 0;
+  }
+  .terminal-layout > aside {
+    display: block;
+    margin-top: 24px;
+  }
+  .price-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 18px 14px;
+  }
+  .price-panel-heading {
+    order: 0;
+  }
+  .price-panel-heading .market-rank {
+    font-size: 9px;
+  }
+  .chart-toolbar {
+    order: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chart-toolbar > span {
+    font-size: 12px;
+  }
+  .chart-toolbar > div {
+    display: flex;
+    width: 100%;
+  }
+  .chart-toolbar button {
+    flex: 1;
+    min-height: 44px;
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+  .detail-chart {
+    order: 2;
+  }
+  .chart-caption {
+    order: 3;
+    font-size: 8px;
+    line-height: 1.6;
+  }
+  .game-metrics {
+    order: 4;
+    padding: 20px 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .game-metrics > span {
+    font-size: 12px;
+  }
+  .game-metrics strong {
+    font-size: 19px;
+  }
+  .detail-chart .chart-large svg {
+    height: 175px;
+    touch-action: pan-y;
+  }
+  .chart-axis {
+    font-size: 9px;
+  }
+  .chart-tooltip {
+    font-size: 13px;
+  }
+  .detail-tabs {
+    margin-top: 26px;
+  }
+  .game-about,
+  .token-info {
+    padding-top: 24px;
+  }
+  .game-about p {
+    font-size: 15px;
+  }
+  .recent-trades {
+    margin-top: 28px;
+  }
+  .trade-panel {
+    position: static;
+  }
+  .trade-settings label,
+  .trade-balance {
+    font-size: 12px;
+  }
+  .creator-steps {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .creator-steps button {
+    min-width: 104px;
+    min-height: 66px;
+    font-size: 12px;
+  }
+  .creator-controls {
+    padding: 24px 18px;
+    min-height: 0;
+  }
+  .creator-controls input,
+  .creator-controls textarea,
+  .creator-controls select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .creator-controls textarea {
+    min-height: 110px;
+  }
+  .color-choices button {
+    width: 44px;
+    height: 44px;
+  }
+  .template-list button {
+    min-height: 68px;
+  }
+  .creation-preview {
+    min-height: 0;
+    padding: 24px 18px;
+  }
+  .creation-path-card {
+    padding: 22px;
+  }
+  .creation-path-card p {
+    font-size: 14px;
+  }
+  .publication-tiers {
+    padding: 20px 16px;
+  }
+  .search-results > a {
+    gap: 12px;
+  }
+  .search-results > a > span {
+    min-width: 0;
+  }
+  .wallet-holdings > a {
+    flex-wrap: wrap;
+  }
+  .wallet-total strong {
+    font-size: 34px;
+  }
+  .site-footer {
+    padding-bottom: 32px;
+  }
+}
+
+@media (max-height: 500px) and (max-width: 999px) {
+  .site-header {
+    position: relative;
+    min-height: 54px;
+    padding-block: 5px;
+  }
+  .handheld-nav a,
+  .handheld-nav button {
+    flex-direction: row;
+    gap: 8px;
+    min-height: 44px;
+  }
+  :root {
+    --handheld-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  .product-dialog {
+    max-height: calc(100dvh - 16px);
+  }
+  .psg-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+  }
+  .console-scene {
+    min-width: 0;
+  }
+}
+
+@media (pointer: coarse), (hover: none) {
+  .signature-magnet,
+  .magnet-invitation {
+    display: none;
+  }
+  .site-header,
+  .handheld-nav,
+  .genre-badge {
+    backdrop-filter: none;
+  }
+  .card-open {
+    opacity: 1;
+  }
+  .collectible-game-card.is-hit::after {
+    animation: none;
+  }
+  .collectible-game-card.is-hit .collectible-card-art::after {
+    animation: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .console-depth {
+    transition: none;
+  }
+}
+
+@media (max-width: 999px) {
+  .signature-magnet,
+  .magnet-invitation {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .market-highlight > div > span {
+    font-size: 20px;
+  }
+  .market-highlight .positive,
+  .market-highlight .negative {
+    font-size: 12px;
+  }
+  .trade-row,
+  .trades-head {
+    grid-template-columns:
+      minmax(80px, 1.3fr) minmax(64px, 1fr) minmax(52px, 0.85fr)
+      minmax(50px, 0.8fr);
+    gap: 8px;
+  }
+  .trade-row {
+    font-size: 12px;
+    padding-block: 16px;
+  }
+  .trade-row small,
+  .trade-row b {
+    font-size: 10px;
+  }
+  .trades-head {
+    font-size: 8px;
+    line-height: 1.7;
+  }
+  .trade-row > span:last-child {
+    font-size: 10px;
+  }
+}
+@media (max-width: 700px) {
+  .collectible-stack-stage,
+  .single-pack-reveal {
+    width: min(270px, calc(100% - 48px));
+  }
+  .collectible-stack-controls small {
+    font-size: 10px;
+  }
+  .pack-hit-note {
+    font-size: 10px;
+    line-height: 1.6;
+  }
+}
+@media (max-width: 700px) {
+  .collectible-card-quote .game-quote.compact-quote .quote-value {
+    font-size: 24px;
+  }
+  .collectible-card-quote .game-quote.compact-quote .quote-symbol {
+    font-size: 11px;
+  }
+}
+@media (max-width: 700px) {
+  .podium {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-block: 6px 18px;
+    margin-bottom: 28px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+  }
+  .podium .podium-card {
+    flex: 0 0 88%;
+    min-height: 340px;
+    height: auto;
+    margin: 0;
+    padding: 20px;
+    scroll-snap-align: start;
+  }
+  .podium-card.place-1 {
+    order: -1;
+  }
+  .podium .podium-info h2 {
+    font-size: 26px;
+  }
+  .podium .podium-info > small {
+    font-size: 11px;
+  }
+  .podium .podium-info > div {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .podium .podium-info > div > strong {
+    font-size: 27px;
+  }
+  .podium .podium-info .positive,
+  .podium .podium-info .negative {
+    font-size: 12px;
+  }
+}
+@media (max-width: 999px) {
+  .collectible-game-card.is-hit::after,
+  .collectible-game-card.is-hit .collectible-card-art::after {
+    animation: none;
+  }
+  .creation-path-links a,
+  .create-flow a {
+    min-height: 44px;
+    align-items: center;
+  }
+  .cartridge-track {
+    touch-action: pan-y;
+  }
+}
+@media (max-width: 700px) {
+  #library-games {
+    padding-top: 32px;
+  }
+}
+@media (max-height: 500px) and (max-width: 999px) {
+  .psg-console {
+    width: min(340px, 90vw);
+  }
+  .shoulder-controls button {
+    width: 48px;
+    height: 44px;
+  }
+  .dpad {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+  }
+  .console-emblem {
+    display: none;
+  }
+  .face-buttons {
+    width: 124px;
+    height: 124px;
+    transform: none;
+  }
+  .face-buttons button {
+    width: 44px;
+    height: 44px;
+  }
+  .face-x {
+    left: 40px;
+    top: 0;
+  }
+  .face-y {
+    left: 0;
+    top: 40px;
+  }
+  .face-a {
+    left: 80px;
+    top: 40px;
+  }
+  .face-b {
+    left: 40px;
+    top: 80px;
+  }
+  .console-start button {
+    min-height: 44px;
+    min-width: 52px;
+  }
+}
+@media (max-width: 700px) {
+  .cartridge-caption .game-quote .quote-value {
+    font-size: 24px;
+  }
+  .cartridge-caption .game-quote > :is(.positive, .negative) {
+    font-size: 13px;
+  }
+}
+@media (max-width: 700px) {
+  .home-pack-reveal {
+    width: 100%;
+    align-self: stretch;
+  }
+}
+
+/* Guide is secondary to the seven product destinations. */
+.desktop-nav a.guide-nav-link {
+  font-size: 13px;
+  color: var(--muted);
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+  height: 30px;
+  align-self: center;
+}
+.desktop-nav a.guide-nav-link.active {
+  color: var(--green);
+}
+@media (min-width: 1000px) and (max-width: 1200px) {
+  .desktop-nav {
+    gap: 12px;
+  }
+  .desktop-nav a.guide-nav-link {
+    padding-left: 12px;
+  }
+}

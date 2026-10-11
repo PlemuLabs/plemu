@@ -83,6 +83,38 @@ namespace Plemu.Content
 
         [JsonProperty("tags")]
         public List<string> Tags { get; set; } = new List<string>();
+
+        [JsonProperty("monetization")]
+        public MonetizationInfo Monetization { get; set; }
+    }
+
+    /// <summary>Monetization policy block (SPEC §1.3/Monetization Design §3).</summary>
+    public sealed class MonetizationInfo
+    {
+        [JsonProperty("model")]
+        public string Model { get; set; }
+
+        [JsonProperty("delivery")]
+        public string Delivery { get; set; }
+
+        public bool RequiresTicket
+        {
+            get
+            {
+                if (string.Equals(Model, "buy_once", System.StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(Model, "pwyw", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (string.Equals(Model, "demo_full", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return !string.Equals(Delivery, "none", System.StringComparison.OrdinalIgnoreCase);
+                }
+
+                return false;
+            }
+        }
     }
 
     /// <summary>Creator identity block (SPEC §1.3).</summary>

@@ -22,8 +22,13 @@
   border-left: 1px solid var(--line);
 }
 .studio-back {
-  margin-left: auto;
   font: 10px/1.8 var(--pixel);
+}
+.creator-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 .studio-layout {
   display: grid;
@@ -47,8 +52,8 @@
   height: 42px;
   display: grid;
   place-items: center;
-  background: #422569;
-  color: #d7b7ff;
+  background: #2d1a71;
+  color: #8c76db;
   font: 18px var(--pixel);
   border: 1px solid var(--purple);
   flex-shrink: 0;
@@ -84,9 +89,9 @@
   text-align: center;
 }
 .studio-sidebar nav a[aria-current="page"] {
-  background: #12313d;
+  background: #424b16;
   color: var(--mint);
-  border-color: #21535a;
+  border-color: #424b16;
 }
 .studio-sidebar nav a:hover {
   color: var(--text);
@@ -341,6 +346,11 @@
   border: 1px solid #685737;
   padding: 5px 8px;
 }
+.draft-status.connected {
+  color: var(--mint);
+  border-color: var(--mint);
+  background: rgba(33, 238, 184, 0.1);
+}
 .draft-grid h2 {
   margin-top: 20px;
   overflow-wrap: anywhere;
@@ -446,7 +456,7 @@
   line-height: 1.7;
   border: 1px solid var(--mint);
   color: var(--mint);
-  background: #143337;
+  background: #424b16;
 }
 .studio-error {
   border-color: #fd8c88;
@@ -587,6 +597,69 @@ td {
   color: var(--muted);
   font: 11px/1.8 var(--pixel);
 }
+.wallet-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.wallet-panel-header h2 {
+  margin: 0;
+}
+.wallet-connected-info {
+  margin: 20px 0;
+  padding: 18px 20px;
+  background: #080c23;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wallet-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  gap: 12px;
+}
+.wallet-detail-row .wallet-label {
+  font: 10px/1.5 var(--pixel);
+  color: var(--muted);
+}
+.wallet-address-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wallet-mono-address {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.copy-wallet-btn {
+  font: 9px/1.5 var(--pixel);
+  color: var(--mint);
+  cursor: pointer;
+}
+.explorer-link {
+  font: 9px/1.5 var(--pixel);
+  color: var(--purple);
+  text-decoration: none;
+}
+.explorer-link:hover {
+  text-decoration: underline;
+}
+.wallet-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.wallet-actions .button {
+  font-size: 9px;
+  padding: 11px 16px;
+}
 .studio-main button:disabled {
   opacity: 0.5;
   transform: none;
@@ -610,9 +683,9 @@ td {
   gap: 12px;
 }
 .chart-bar {
-  background: linear-gradient(0deg, #4871ad, var(--mint));
+  background: linear-gradient(0deg, #424b16, var(--mint));
   width: 100%;
-  border: 1px solid #53caba;
+  border: 1px solid var(--mint);
 }
 .visits-chart span {
   font-size: 14px;
@@ -675,10 +748,27 @@ td {
     font-size: 8px;
     padding-left: 15px;
   }
-  .studio-back {
+  .creator-header-actions {
     width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .studio-back {
     margin-left: 0;
     font-size: 8px;
+  }
+  .wallet-detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .wallet-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wallet-actions .button {
+    width: 100%;
   }
   .studio-layout {
     display: block;
@@ -796,4 +886,60 @@ td {
   .studio-banner strong {
     font-size: 8px;
   }
+}
+
+/* Keep the existing creator workspace independent of the consumer theme. */
+.creator-app {
+  --bg: #080c23;
+  --surface: #10152f;
+  --mint: #b6d935;
+  --purple: #8c76db;
+  --amber: #ffbe59;
+  --text: #f0edff;
+  --muted: #9b9fb8;
+  --line: #30375d;
+  color: var(--text);
+  font-size: 16px;
+}
+.creator-app .brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: 700 24px var(--display);
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.creator-app .purple-text {
+  color: var(--purple);
+}
+.creator-app .button {
+  font: 12px/1.8 var(--pixel);
+  padding: 14px 20px;
+  border: 2px solid #d6d5e9;
+  box-shadow: 4px 4px #030719;
+  border-radius: 0;
+}
+.creator-app .button.primary {
+  background: var(--mint);
+  color: #070b22;
+}
+.creator-app .button.secondary {
+  background: #1b2043;
+  color: var(--text);
+}
+.creator-app .text-button {
+  color: var(--mint);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  padding: 5px 0;
+  font-size: 13px;
+}
+.creator-app .eyebrow {
+  font: 10px/1.8 var(--pixel);
+}
+.creator-app .activity-icon {
+  border-radius: 0;
+  background: #1c2449;
+  color: var(--mint);
+  border-color: var(--line);
 }

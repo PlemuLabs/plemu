@@ -52,6 +52,22 @@ namespace Plemu.Emulation
         });
 
         /// <summary>
+        /// The default physical gamepad mapping for the PlaySolana PSG1 handheld.
+        /// Maps standard joystick buttons: 0=A, 1=B, 2=X, 3=Y, 4=L, 5=R, 6=Select, 7=Start.
+        /// </summary>
+        public static RetroPad DefaultPsg1GamepadMapping => new RetroPad(new[]
+        {
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton0, A),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton1, B),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton2, X),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton3, Y),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton4, L),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton5, R),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton6, Select),
+            new KeyBinding(UnityEngine.KeyCode.JoystickButton7, Start),
+        });
+
+        /// <summary>
         /// Folds a set of currently-pressed keys into the RetroPad bitmask. <paramref name="isDown"/>
         /// reports whether a key is held (injectable so tests need no real keyboard).
         /// </summary>

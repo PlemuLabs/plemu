@@ -1,19 +1,42 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/space-grotesk";
+import "@fontsource/dm-sans/400.css";
+import "@fontsource/dm-sans/500.css";
+import "@fontsource/dm-sans/600.css";
+import "@fontsource/dm-mono/400.css";
+import "@fontsource/silkscreen/400.css";
+import "@solana/wallet-adapter-react-ui/styles.css";
+import "../components/wallet-adapter-retro.css";
 import "./globals.css";
+import "./play-system.css";
+import "./handheld.css";
+import { SolanaWalletProvider } from "../providers/SolanaWalletProvider";
+import { AppShell } from "../components/app-shell";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#121418",
+};
 
 export const metadata: Metadata = {
-  title: "Plemu — Play. Create. Share.",
+  title: "Plemu — Every game is an asset.",
   description:
-    "Um novo lugar para descobrir, criar e jogar games independentes no navegador.",
-  icons: { icon: "/favicon.svg" },
+    "Discover, play, create, and collect. A new home for games, creators, and curious people.",
+  icons: { icon: "/brand/plemu-mark.svg", apple: "/brand/plemu-logo.png" },
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
-      <body>{children}</body>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body>
+        <SolanaWalletProvider>
+          <AppShell>{children}</AppShell>
+        </SolanaWalletProvider>
+      </body>
     </html>
   );
 }
