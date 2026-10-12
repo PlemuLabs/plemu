@@ -80,7 +80,7 @@ describe("Shared Frontend Wallet Integration", () => {
     renderHome();
     fireEvent.click(screen.getByRole("button", { name: "Wallet" }));
     const walletBtn = screen.getByRole("button", {
-      name: /CONECTAR CARTEIRA/i,
+      name: /CONNECT WALLET/i,
     });
     expect(walletBtn).toBeDefined();
 

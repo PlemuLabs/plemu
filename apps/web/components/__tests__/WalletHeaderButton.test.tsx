@@ -75,21 +75,21 @@ describe("WalletHeaderButton", () => {
     vi.useRealTimers();
   });
 
-  it("renders disconnected button with text 'CONECTAR CARTEIRA' when not connected", () => {
+  it("renders disconnected button with text 'CONNECT WALLET' when not connected", () => {
     render(<WalletHeaderButton />);
-    const button = screen.getByRole("button", { name: /CONECTAR CARTEIRA/i });
+    const button = screen.getByRole("button", { name: /CONNECT WALLET/i });
     expect(button).toBeDefined();
-    expect(button.textContent).toContain("CONECTAR CARTEIRA");
+    expect(button.textContent).toContain("CONNECT WALLET");
   });
 
-  it("closes open HTML5 dialogs and opens wallet modal when 'CONECTAR CARTEIRA' is clicked", () => {
+  it("closes open HTML5 dialogs and opens wallet modal when 'CONNECT WALLET' is clicked", () => {
     const dialog = document.createElement("dialog");
     dialog.setAttribute("open", "");
     const closeSpy = vi.spyOn(dialog, "close");
     document.body.appendChild(dialog);
 
     render(<WalletHeaderButton />);
-    const button = screen.getByRole("button", { name: /CONECTAR CARTEIRA/i });
+    const button = screen.getByRole("button", { name: /CONNECT WALLET/i });
     fireEvent.click(button);
 
     expect(closeSpy).toHaveBeenCalledTimes(1);
@@ -143,22 +143,22 @@ describe("WalletHeaderButton", () => {
 
     render(<WalletHeaderButton />);
 
-    expect(screen.queryByText("Copiar Endereço")).toBeNull();
+    expect(screen.queryByText("Copy Address")).toBeNull();
 
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });
     fireEvent.click(trigger);
 
-    expect(screen.getByText("Copiar Endereço")).toBeDefined();
-    expect(screen.getByText(/Ver no Solana Explorer/i)).toBeDefined();
-    expect(screen.getByText("Atualizar Saldos")).toBeDefined();
-    expect(screen.getByText("Desconectar")).toBeDefined();
+    expect(screen.getByText("Copy Address")).toBeDefined();
+    expect(screen.getByText(/View on Solana Explorer/i)).toBeDefined();
+    expect(screen.getByText("Refresh Balances")).toBeDefined();
+    expect(screen.getByText("Disconnect")).toBeDefined();
 
     // Click again to close
     fireEvent.click(trigger);
-    expect(screen.queryByText("Copiar Endereço")).toBeNull();
+    expect(screen.queryByText("Copy Address")).toBeNull();
   });
 
-  it("copies address to clipboard and shows temporary feedback when 'Copiar Endereço' is clicked", async () => {
+  it("copies address to clipboard and shows temporary feedback when 'Copy Address' is clicked", async () => {
     vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue({
       ...defaultAuthState,
       isConnected: true,
@@ -171,7 +171,7 @@ describe("WalletHeaderButton", () => {
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });
     fireEvent.click(trigger);
 
-    const copyBtn = screen.getByText("Copiar Endereço");
+    const copyBtn = screen.getByText("Copy Address");
     await act(async () => {
       fireEvent.click(copyBtn);
     });
@@ -179,14 +179,14 @@ describe("WalletHeaderButton", () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
       "Dos7xNqW8vGkE6y2k8D2Vp9k1p4mQz8wR5tY7u3i4o5p",
     );
-    expect(screen.getByText("Copiado!")).toBeDefined();
+    expect(screen.getByText("Copied!")).toBeDefined();
 
     act(() => {
       vi.advanceTimersByTime(2100);
     });
 
-    expect(screen.getByText("Copiar Endereço")).toBeDefined();
-    expect(screen.queryByText("Copiado!")).toBeNull();
+    expect(screen.getByText("Copy Address")).toBeDefined();
+    expect(screen.queryByText("Copied!")).toBeNull();
   });
 
   it("falls back to document.execCommand when navigator.clipboard is unavailable in WalletHeaderButton", async () => {
@@ -208,13 +208,13 @@ describe("WalletHeaderButton", () => {
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });
     fireEvent.click(trigger);
 
-    const copyBtn = screen.getByText("Copiar Endereço");
+    const copyBtn = screen.getByText("Copy Address");
     await act(async () => {
       fireEvent.click(copyBtn);
     });
 
     expect(execCommandSpy).toHaveBeenCalledWith("copy");
-    expect(screen.getByText("Copiado!")).toBeDefined();
+    expect(screen.getByText("Copied!")).toBeDefined();
 
     // Restore
     Object.defineProperty(navigator, "clipboard", {
@@ -236,7 +236,7 @@ describe("WalletHeaderButton", () => {
     fireEvent.click(screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i }));
 
     const explorerLink = screen.getByRole("menuitem", {
-      name: /Ver no Solana Explorer/i,
+      name: /View on Solana Explorer/i,
     });
     expect(explorerLink).toBeDefined();
     expect(explorerLink.getAttribute("href")).toContain(
@@ -246,7 +246,7 @@ describe("WalletHeaderButton", () => {
     expect(explorerLink.getAttribute("rel")).toContain("noopener");
   });
 
-  it("triggers refreshBalances(true) when 'Atualizar Saldos' is clicked", () => {
+  it("triggers refreshBalances(true) when 'Refresh Balances' is clicked", () => {
     vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue({
       ...defaultAuthState,
       isConnected: true,
@@ -257,7 +257,7 @@ describe("WalletHeaderButton", () => {
     render(<WalletHeaderButton />);
     fireEvent.click(screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i }));
 
-    const refreshBtn = screen.getByText("Atualizar Saldos");
+    const refreshBtn = screen.getByText("Refresh Balances");
     fireEvent.click(refreshBtn);
 
     expect(mockRefreshBalances).toHaveBeenCalledWith(true);
@@ -275,10 +275,10 @@ describe("WalletHeaderButton", () => {
     render(<WalletHeaderButton />);
     fireEvent.click(screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i }));
 
-    expect(screen.getByText(/Atualizando\.\.\./i)).toBeDefined();
+    expect(screen.getByText(/Refreshing\.\.\./i)).toBeDefined();
   });
 
-  it("calls disconnect() and closes dropdown when 'Desconectar' is clicked", () => {
+  it("calls disconnect() and closes dropdown when 'Disconnect' is clicked", () => {
     vi.spyOn(usePlemuAuthModule, "usePlemuAuth").mockReturnValue({
       ...defaultAuthState,
       isConnected: true,
@@ -290,11 +290,11 @@ describe("WalletHeaderButton", () => {
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });
     fireEvent.click(trigger);
 
-    const disconnectBtn = screen.getByText("Desconectar");
+    const disconnectBtn = screen.getByText("Disconnect");
     fireEvent.click(disconnectBtn);
 
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Desconectar")).toBeNull();
+    expect(screen.queryByText("Disconnect")).toBeNull();
   });
 
   it("closes dropdown when Escape key is pressed", () => {
@@ -309,10 +309,10 @@ describe("WalletHeaderButton", () => {
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });
     fireEvent.click(trigger);
 
-    expect(screen.getByText("Copiar Endereço")).toBeDefined();
+    expect(screen.getByText("Copy Address")).toBeDefined();
 
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByText("Copiar Endereço")).toBeNull();
+    expect(screen.queryByText("Copy Address")).toBeNull();
   });
 
   it("closes dropdown when clicking outside the menu", () => {
@@ -332,9 +332,9 @@ describe("WalletHeaderButton", () => {
 
     const trigger = screen.getByRole("button", { name: /Dos7\.\.\.4o5p/i });
     fireEvent.click(trigger);
-    expect(screen.getByText("Copiar Endereço")).toBeDefined();
+    expect(screen.getByText("Copy Address")).toBeDefined();
 
     fireEvent.mouseDown(screen.getByTestId("outside"));
-    expect(screen.queryByText("Copiar Endereço")).toBeNull();
+    expect(screen.queryByText("Copy Address")).toBeNull();
   });
 });
