@@ -70,7 +70,7 @@ describe("Creator Studio Page - Web3 & Wallet Integration", () => {
 
   it("renders WalletHeaderButton in creator-header across tabs", () => {
     render(<CreatorPage />);
-    const headerWalletBtn = screen.getByRole("button", { name: /CONECTAR CARTEIRA/i });
+    const headerWalletBtn = screen.getByRole("button", { name: /CONNECT WALLET/i });
     expect(headerWalletBtn).toBeDefined();
   });
 

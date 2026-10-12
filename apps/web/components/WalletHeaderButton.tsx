@@ -127,13 +127,14 @@ export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
     return (
       <button
         type="button"
-        className={`wallet ${className || ""}`.trim()}
+        className={`wallet wallet-connect-btn button secondary ${className || ""}`.trim()}
         onClick={handleConnectClick}
         disabled={!mounted}
         aria-busy={!mounted}
         suppressHydrationWarning
       >
-        CONECTAR CARTEIRA
+        <span className="wallet-btn-icon">◇</span>
+        <span>CONNECT WALLET</span>
       </button>
     );
   }
@@ -181,7 +182,7 @@ export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
             onClick={handleCopy}
           >
             <span className="wallet-dropdown-icon">📋</span>
-            <span>{copied ? "Copiado!" : "Copiar Endereço"}</span>
+            <span>{copied ? "Copied!" : "Copy Address"}</span>
           </button>
 
           <a
@@ -193,7 +194,7 @@ export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
             onClick={() => setDropdownOpen(false)}
           >
             <span className="wallet-dropdown-icon">↗</span>
-            <span>Ver no Solana Explorer</span>
+            <span>View on Solana Explorer</span>
           </a>
 
           <button
@@ -205,7 +206,7 @@ export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
           >
             <span className="wallet-dropdown-icon">⟳</span>
             <span>
-              {isLoadingBalance ? "Atualizando..." : "Atualizar Saldos"}
+              {isLoadingBalance ? "Refreshing..." : "Refresh Balances"}
             </span>
           </button>
 
@@ -216,7 +217,7 @@ export const WalletHeaderButton: FC<WalletHeaderButtonProps> = ({
             onClick={handleDisconnect}
           >
             <span className="wallet-dropdown-icon">✕</span>
-            <span>Desconectar</span>
+            <span>Disconnect</span>
           </button>
         </div>
       )}
